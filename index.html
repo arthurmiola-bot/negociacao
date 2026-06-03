@@ -389,17 +389,22 @@ import { getFirestore, collection, addDoc, updateDoc, doc, getDoc, getDocs,
 // ===================== FIREBASE CONFIG =====================
 // Substitua pelos seus valores do Firebase Console
 const FIREBASE_CONFIG = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyBDPSUJ_6_NsKULk9EI3wVooTN84u7A3Ic",
+  authDomain: "negociacao-8af55.firebaseapp.com",
+  projectId: "negociacao-8af55",
+  storageBucket: "negociacao-8af55.firebasestorage.app",
+  messagingSenderId: "187272022913",
+  appId: "1:187272022913:web:26970130e3a58657e07680"
 };
 
-const app = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const FIREBASE_CONFIGURED = FIREBASE_CONFIG.apiKey !== "SUA_API_KEY";
+
+var app = null, auth = null, db = null;
+if(FIREBASE_CONFIGURED){
+  app = initializeApp(FIREBASE_CONFIG);
+  auth = getAuth(app);
+  db   = getFirestore(app);
+}
 
 // ===================== PRODUTO DATA =====================
 var DATAS = ["Aug/26", "Sep/26", "Oct/26", "Nov/26", "Dec/26", "Jan/27", "Feb/27", "Mar/27", "Apr/27"];
@@ -641,31 +646,39 @@ function toast(msg){
 }
 
 // ===================== AUTH =====================
-document.getElementById('loading').classList.remove('hidden');
+document.getElementById('loading').classList.add('hidden');
 
-onAuthStateChanged(auth, async function(user){
-  document.getElementById('loading').classList.add('hidden');
-  if(user){
-    currentUser = user;
-    // Load user profile from Firestore
-    try {
-      var snap = await getDoc(doc(db,'usuarios',user.uid));
-      if(snap.exists()){
-        currentUserData = snap.data();
-      } else {
+if(!FIREBASE_CONFIGURED){
+  // Modo offline: entra sem login, perfil vendedor
+  currentUser = {uid:'local', email:'usuario@local'};
+  currentUserData = {nome:'Usuario Local', perfil:'vendedor'};
+  margemMin = 15;
+  document.getElementById('margem-min-inp').value = 15;
+  document.getElementById('margem-min-txt').textContent = '15%';
+  showApp();
+} else {
+  onAuthStateChanged(auth, async function(user){
+    if(user){
+      currentUser = user;
+      try {
+        var snap = await getDoc(doc(db,'usuarios',user.uid));
+        if(snap.exists()){
+          currentUserData = snap.data();
+        } else {
+          currentUserData = {nome: user.email, perfil: 'vendedor'};
+        }
+      } catch(e) {
         currentUserData = {nome: user.email, perfil: 'vendedor'};
       }
-    } catch(e) {
-      currentUserData = {nome: user.email, perfil: 'vendedor'};
+      await loadConfig();
+      showApp();
+    } else {
+      currentUser = null;
+      currentUserData = null;
+      showLogin();
     }
-    await loadConfig();
-    showApp();
-  } else {
-    currentUser = null;
-    currentUserData = null;
-    showLogin();
-  }
-});
+  });
+}
 
 function showLogin(){
   document.getElementById('login-screen').classList.remove('hidden');
@@ -691,6 +704,10 @@ function showApp(){
 }
 
 document.getElementById('btn-login').addEventListener('click', async function(){
+  if(!FIREBASE_CONFIGURED){
+    document.getElementById('login-err').textContent = 'Configure o Firebase primeiro.';
+    return;
+  }
   var email = document.getElementById('login-email').value.trim();
   var senha = document.getElementById('login-senha').value;
   var errEl = document.getElementById('login-err');
@@ -708,7 +725,12 @@ document.getElementById('login-senha').addEventListener('keydown', function(e){
 });
 
 document.getElementById('btn-logout').addEventListener('click', async function(){
-  await signOut(auth);
+  if(FIREBASE_CONFIGURED){ await signOut(auth); }
+  else {
+    currentUser=null; currentUserData=null;
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
 });
 
 // ===================== CONFIG =====================
@@ -923,14 +945,29 @@ document.getElementById('btn-save').addEventListener('click', async function(){
     updatedAt:serverTimestamp()
   };
   try {
-    if(editingCotId){
-      await updateDoc(doc(db,'cotacoes',editingCotId), data);
-      toast('Cotacao atualizada!');
+    if(!FIREBASE_CONFIGURED){
+      var h=JSON.parse(localStorage.getItem('neg_cots')||'[]');
+      data.criadoEm = new Date().toISOString();
+      if(editingCotId){
+        var idx=h.findIndex(function(x){ return x._id===editingCotId; });
+        if(idx>=0) h[idx]={...data,_id:editingCotId};
+        toast('Cotacao atualizada (local)!');
+      } else {
+        editingCotId = 'local_'+Date.now();
+        h.unshift({...data,_id:editingCotId});
+        toast('Cotacao salva (local)!');
+      }
+      localStorage.setItem('neg_cots',JSON.stringify(h.slice(0,50)));
     } else {
-      data.criadoEm = serverTimestamp();
-      var ref = await addDoc(collection(db,'cotacoes'), data);
-      editingCotId = ref.id;
-      toast('Cotacao salva!');
+      if(editingCotId){
+        await updateDoc(doc(db,'cotacoes',editingCotId), data);
+        toast('Cotacao atualizada!');
+      } else {
+        data.criadoEm = serverTimestamp();
+        var ref = await addDoc(collection(db,'cotacoes'), data);
+        editingCotId = ref.id;
+        toast('Cotacao salva!');
+      }
     }
     if(navigator.vibrate) navigator.vibrate([30,20,30]);
   } catch(e){ toast('Erro ao salvar: '+e.message); }
@@ -972,14 +1009,22 @@ async function abrirHist(){
   var el=document.getElementById('hist-list');
   el.innerHTML='<div class="hist-empty">Carregando...</div>';
   try {
-    var q=query(collection(db,'cotacoes'),
-      where('uid','==',currentUser.uid),
-      orderBy('updatedAt','desc'));
-    var snap=await getDocs(q);
+    var docs2 = [];
+    if(!FIREBASE_CONFIGURED){
+      var local=JSON.parse(localStorage.getItem('neg_cots')||'[]');
+      docs2=local.map(function(x){ return {id:x._id, data:function(){ return x; }}; });
+    } else {
+      var q=query(collection(db,'cotacoes'),
+        where('uid','==',currentUser.uid),
+        orderBy('updatedAt','desc'));
+      var snap=await getDocs(q);
+      snap.forEach(function(d){ docs2.push(d); });
+    }
+    var snap={empty:docs2.length===0, forEach:function(fn){ docs2.forEach(fn); }};
     if(snap.empty){ el.innerHTML='<div class="hist-empty">Nenhuma cotacao salva</div>'; return; }
     var html='';
     snap.forEach(function(d){
-      var s=d.data(); var dt=s.updatedAt?.toDate?.()|| new Date();
+      var s=d.data(); var dt=s.updatedAt?.toDate?.()|| new Date(s.criadoEm||Date.now());
       var ds=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})
         +' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       var mg=(s.margem||0)*100;
@@ -1008,9 +1053,17 @@ function fecharHist(){
 
 async function loadCotacao(cid){
   try {
-    var snap=await getDoc(doc(db,'cotacoes',cid));
-    if(!snap.exists()) return;
-    var s=snap.data();
+    var s=null;
+    if(!FIREBASE_CONFIGURED){
+      var local=JSON.parse(localStorage.getItem('neg_cots')||'[]');
+      var found=local.find(function(x){ return x._id===cid; });
+      if(!found) return;
+      s=found;
+    } else {
+      var snap=await getDoc(doc(db,'cotacoes',cid));
+      if(!snap.exists()) return;
+      s=snap.data();
+    }
     editingCotId=cid;
     document.getElementById('cliente').value=s.cliente||'';
     // Set mes
