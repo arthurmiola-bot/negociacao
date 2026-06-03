@@ -467,7 +467,7 @@ function setupMes(){
   var now = new Date();
   var monthStr = now.toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ','/')
                     .replace('Aug','Aug').replace('Sep','Sep');
-  mesIdx = 0;
+  mesIdx = DATAS.length - 1;
   sel.value = mesIdx;
   sel.addEventListener('change', function(){
     mesIdx = parseInt(sel.value);
