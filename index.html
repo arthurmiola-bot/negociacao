@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1e4d8c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Negociacao" />
+  <title>Negociacao</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --azul:    #1e4d8c;
+      --azul-hdr:#163a6b;
+      --azul-btn:#1a4278;
+      --azul-lt: #ddeaf8;
+      --azul-bd: #90b8e8;
+      --verde:   #1a6b3a;
+      --verde-lt:#d4f0e0;
+      --verde-bd:#7dcfa0;
+      --laranja: #c45c00;
+      --lj-lt:   #fde8d4;
+      --lj-bd:   #f0a870;
+      --text:    #111111;
+      --text2:   #333333;
+      --text3:   #555555;
+      --bg:      #f0f4f8;
+      --card:    #ffffff;
+      --bdr:     #cccccc;
+      --font: system-ui, -apple-system, sans-serif;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); }
+    body { font-family: var(--font); color: var(--text); -webkit-tap-highlight-color: transparent; }
+    #app { height: 100%; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
+
+    /* HEADER */
+    .hdr { background: var(--azul-hdr); padding: calc(var(--safe-t) + 10px) 14px 10px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    .hdr-left { display: flex; align-items: center; gap: 8px; }
+    .hdr-title { font-size: 19px; font-weight: 600; color: #fff; }
+    .btn-ico { width: 34px; height: 34px; border: none; background: rgba(255,255,255,.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; flex-shrink: 0; }
+    .btn-ico:active { background: rgba(255,255,255,.3); }
+
+    /* MES BAR */
+    .mes-bar { background: var(--azul); padding: 8px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .mes-bar label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.85); letter-spacing: .1em; white-space: nowrap; }
+    .mes-select { flex: 1; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3); border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; padding: 7px 10px; outline: none; cursor: pointer; }
+    .mes-select option { background: var(--azul-hdr); color: #fff; }
+
+    /* SCROLL */
+    .scroll { flex: 1; overflow-y: auto; padding: 10px 12px; padding-bottom: calc(200px + var(--safe-b)); -webkit-overflow-scrolling: touch; }
+
+    /* CARDS */
+    .card { background: var(--card); border: 1.5px solid var(--bdr); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+    .lbl { display: block; font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--text3); margin-bottom: 8px; text-transform: uppercase; }
+    .field { width: 100%; border: 1.5px solid var(--bdr); border-radius: 9px; padding: 10px 12px; font-size: 15px; color: var(--text); background: #fff; outline: none; }
+    .field:focus { border-color: var(--azul); }
+
+    /* ABAS */
+    .cat-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tab { flex-shrink: 0; padding: 6px 12px; border-radius: 100px; border: 1.5px solid var(--bdr); background: #fff; font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer; white-space: nowrap; }
+    .cat-tab.active { background: var(--azul-btn); color: #fff; border-color: var(--azul-btn); }
+    .cat-tab .badge { display: inline-block; background: rgba(255,255,255,.3); border-radius: 100px; padding: 0 5px; font-size: 10px; margin-left: 4px; }
+    .cat-tab:not(.active) .badge { background: var(--azul-lt); color: var(--azul-btn); }
+
+    /* SEARCH */
+    .search-wrap { position: relative; margin-bottom: 8px; }
+    .search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text3); }
+    .search-input { width: 100%; border: 1.5px solid var(--bdr); border-radius: 9px; padding: 10px 12px 10px 33px; font-size: 14px; color: var(--text); background: #fff; outline: none; }
+    .search-input:focus { border-color: var(--azul); }
+
+    /* PRODUCT LIST */
+    .prod-list { border: 1.5px solid var(--bdr); border-radius: 10px; overflow: hidden; max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #fff; }
+    .pi { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; user-select: none; }
+    .pi:last-child { border-bottom: none; }
+    .pi-info { flex: 1; pointer-events: none; }
+    .pi-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .pi-det { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .pi-plus { width: 30px; height: 30px; border-radius: 50%; background: var(--azul); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: #fff; font-size: 20px; font-weight: 300; }
+    .pi-plus:active { transform: scale(.9); }
+    .prod-empty { padding: 16px; text-align: center; font-size: 13px; color: var(--text3); }
+
+    /* ITEM CARDS */
+    .item-card { background: var(--card); border: 1.5px solid var(--bdr); border-radius: 14px; margin-bottom: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,.05); animation: slideIn .2s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .ic-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px; }
+    .ic-num { width: 22px; height: 22px; border-radius: 50%; background: var(--azul-lt); color: var(--azul-btn); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ic-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .ic-grupo { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 100px; background: var(--azul-lt); color: var(--azul-btn); flex-shrink: 0; }
+    .ic-del { background: none; border: 1.5px solid var(--bdr); cursor: pointer; color: var(--text3); font-size: 14px; padding: 3px 6px; border-radius: 7px; }
+    .ic-del:active { background: #fdecea; color: #c0392b; }
+
+    /* INPUTS GRID */
+    .ic-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; padding: 0 12px 10px; }
+    .ig label { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text3); display: block; margin-bottom: 4px; text-transform: uppercase; }
+    .qty-inp, .neg-inp { width: 100%; border: 1.5px solid var(--bdr); border-radius: 8px; padding: 7px 6px; font-size: 14px; font-weight: 600; color: var(--text); background: #fff; outline: none; text-align: right; -moz-appearance: textfield; }
+    .qty-inp::-webkit-outer-spin-button, .qty-inp::-webkit-inner-spin-button,
+    .neg-inp::-webkit-outer-spin-button, .neg-inp::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .qty-inp:focus { border-color: var(--azul); }
+    .neg-inp { border-color: var(--azul-bd); background: var(--azul-lt); color: var(--azul-btn); }
+    .neg-inp:focus { border-color: var(--azul); background: #fff; color: var(--text); }
+    .preco-lista { font-size: 14px; font-weight: 600; color: var(--text2); padding: 7px 0 7px 4px; }
+
+    /* FOOTER CARD */
+    .ic-foot { border-top: 1.5px solid #eee; padding: 7px 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: var(--bg); }
+    .ic-foot-item { display: flex; flex-direction: column; }
+    .ic-foot-lbl { font-size: 9px; font-weight: 700; color: var(--text3); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 2px; }
+    .ic-foot-val { font-size: 13px; font-weight: 700; color: var(--text); }
+    .ic-foot-val.verde { color: var(--verde); }
+    .ic-foot-val.laranja { color: var(--laranja); }
+
+    /* EMPTY */
+    .empty-state { text-align: center; padding: 36px 20px; }
+    .empty-ico { font-size: 38px; opacity: .3; margin-bottom: 10px; }
+    .empty-txt { font-size: 15px; font-weight: 600; color: var(--text2); margin-bottom: 3px; }
+    .empty-sub { font-size: 13px; color: var(--text3); }
+
+    /* BOTTOM */
+    .bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid var(--bdr); padding: 10px 14px calc(10px + var(--safe-b)); box-shadow: 0 -4px 20px rgba(0,0,0,.1); z-index: 20; }
+    .b-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .b-box { flex: 1; background: var(--bg); border: 1.5px solid var(--bdr); border-radius: 10px; padding: 7px 10px; }
+    .b-box-lbl { font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; margin-bottom: 2px; }
+    .b-box-val { font-size: 17px; font-weight: 700; color: var(--text); }
+    .b-margem { flex: 1; border-radius: 10px; padding: 7px 10px; border: 1.5px solid var(--verde-bd); background: var(--verde-lt); }
+    .b-margem .b-box-val { color: var(--verde); font-size: 20px; }
+    .b-margem.warn { border-color: var(--lj-bd); background: var(--lj-lt); }
+    .b-margem.warn .b-box-val { color: var(--laranja); }
+    .b-actions { display: flex; gap: 9px; }
+    .btn-share { flex: 1; padding: 11px; border: 2px solid var(--azul); border-radius: 10px; background: #fff; color: var(--azul-btn); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-save { flex: 1; padding: 11px; border: none; border-radius: 10px; background: var(--azul-btn); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-share:active { background: var(--azul-lt); }
+    .btn-save:active { opacity: .85; }
+
+    /* DRAWER */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 30; }
+    .drawer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 31; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: var(--safe-b); max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 -8px 40px rgba(0,0,0,.15); animation: up .3s cubic-bezier(.32,.72,0,1); }
+    @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .drawer-handle { width: 36px; height: 4px; background: var(--bdr); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+    .drawer-hdr { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; border-bottom: 1.5px solid var(--bdr); flex-shrink: 0; }
+    .drawer-title { font-size: 20px; font-weight: 600; color: var(--text); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 12px; }
+    .hist-item { background: var(--bg); border: 1.5px solid var(--bdr); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+    .hist-cli { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .hist-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .hist-date { font-size: 12px; color: var(--text3); }
+    .hist-val { font-size: 14px; font-weight: 700; color: var(--azul-btn); }
+    .hist-det { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .hist-empty { text-align: center; padding: 40px; color: var(--text3); font-size: 14px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 210px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 9px 18px; border-radius: 100px; font-size: 13px; font-weight: 600; z-index: 50; white-space: nowrap; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="hdr">
+    <div class="hdr-left">
+      <span style="font-size:20px">&#128200;</span>
+      <span class="hdr-title">Negociacao</span>
+    </div>
+    <button class="btn-ico" id="btn-hist">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    </button>
+  </header>
+
+  <div class="mes-bar">
+    <label>MES</label>
+    <select class="mes-select" id="mes-select"></select>
+  </div>
+
+  <div class="scroll">
+    <div class="card">
+      <span class="lbl">Cliente</span>
+      <input class="field" id="cliente" type="text" placeholder="Nome do cliente / fazenda" />
+    </div>
+
+    <div class="card">
+      <span class="lbl">Produtos</span>
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <div class="search-wrap">
+        <svg class="search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="busca" type="text" placeholder="Buscar produto..." autocomplete="off" />
+      </div>
+      <div class="prod-list" id="prod-list"></div>
+    </div>
+
+    <div id="cart-area"></div>
+  </div>
+
+  <div class="bottom">
+    <div class="b-row">
+      <div class="b-box">
+        <div class="b-box-lbl">Total Lista</div>
+        <div class="b-box-val" id="tot-lista">R$ 0,00</div>
+      </div>
+      <div class="b-box">
+        <div class="b-box-lbl">Total Negociado</div>
+        <div class="b-box-val" id="tot-neg">R$ 0,00</div>
+      </div>
+      <div class="b-margem" id="margem-box">
+        <div class="b-box-lbl">Margem Media</div>
+        <div class="b-box-val" id="margem-val">--%</div>
+      </div>
+    </div>
+    <div class="b-actions">
+      <button class="btn-share" id="btn-share">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16,6 12,2 8,6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Compartilhar
+      </button>
+      <button class="btn-save" id="btn-save">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="hist-overlay" class="overlay hidden"></div>
+<div id="hist-drawer" class="drawer hidden">
+  <div class="drawer-handle"></div>
+  <div class="drawer-hdr">
+    <span class="drawer-title">Historico</span>
+    <button class="btn-ico" id="btn-close-hist" style="background:rgba(0,0,0,.08);color:#333">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="hist-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var DATAS = ["Aug/26", "Sep/26", "Oct/26", "Nov/26", "Dec/26", "Jan/27", "Feb/27", "Mar/27", "Apr/27"];
+
+var P = [
+  {id:"e01",name:"Ag Bital",grupo:"Especialidade",v:[175.6581,178.293,180.9674,183.6819,186.4371,189.2337,192.0722,194.9533,197.8776],c:[122.9607,124.8051,126.6772,128.5773,130.506,132.4636,134.4505,136.4673,138.5143]},
+  {id:"e02",name:"Ag Dommon",grupo:"Especialidade",v:[951.4814,965.7536,980.2399,994.9435,1009.8677,1025.0157,1040.3909,1055.9968,1071.8367],c:[666.037,676.0275,686.1679,696.4605,706.9074,717.511,728.2736,739.1977,750.2857]},
+  {id:"e03",name:"Ag Energia",grupo:"Especialidade",v:[29.2764,29.7155,30.1612,30.6136,31.0729,31.5389,32.012,32.4922,32.9796],c:[20.4934,20.8008,21.1129,21.4296,21.751,22.0773,22.4084,22.7445,23.0857]},
+  {id:"e04",name:"Ag Nexmmon Pro",grupo:"Especialidade",v:[204.9345,208.0085,211.1286,214.2955,217.51,220.7726,224.0842,227.4455,230.8571],c:[143.4541,145.6059,147.79,150.0069,152.257,154.5408,156.8589,159.2118,161.6]},
+  {id:"e05",name:"Ag Plus",grupo:"Especialidade",v:[42.4507,43.0875,43.7338,44.3898,45.0556,45.7315,46.4174,47.1137,47.8204],c:[29.7155,30.1612,30.6136,31.0729,31.5389,32.012,32.4922,32.9796,33.4743]},
+  {id:"e06",name:"Ag Preparo",grupo:"Especialidade",v:[71.7271,72.803,73.895,75.0034,76.1285,77.2704,78.4295,79.6059,80.8],c:[50.2089,50.9621,51.7265,52.5024,53.2899,54.0893,54.9006,55.7241,56.56]},
+  {id:"e07",name:"Ag Protect",grupo:"Especialidade",v:[62.9442,63.8883,64.8466,65.8193,66.8066,67.8087,68.8259,69.8582,70.9061],c:[44.0609,44.7218,45.3926,46.0735,46.7646,47.4661,48.1781,48.9008,49.6343]},
+  {id:"e08",name:"Ag Sky",grupo:"Especialidade",v:[70.2632,71.3172,72.3869,73.4728,74.5748,75.6935,76.8289,77.9813,79.151],c:[49.1843,49.922,50.6709,51.4309,52.2024,52.9854,53.7802,54.5869,55.4057]},
+  {id:"e09",name:"Ag Solucao",grupo:"Especialidade",v:[51.2336,52.0021,52.7821,53.5739,54.3775,55.1932,56.021,56.8614,57.7143],c:[35.8635,36.4015,36.9475,37.5017,38.0642,38.6352,39.2147,39.803,40.4]},
+  {id:"e10",name:"Ag Tecmmon",grupo:"Especialidade",v:[57.0889,57.9452,58.8144,59.6966,60.5921,61.5009,62.4235,63.3598,64.3102],c:[39.9622,40.5617,41.1701,41.7876,42.4144,43.0507,43.6964,44.3519,45.0171]},
+  {id:"e11",name:"Ag Ultrabio",grupo:"Especialidade",v:[83.4376,84.6892,85.9595,87.2489,88.5576,89.886,91.2343,92.6028,93.9918],c:[58.4063,59.2824,60.1717,61.0742,61.9903,62.9202,63.864,64.822,65.7943]},
+  {id:"e12",name:"Agri-K 12,5L",grupo:"Especialidade",v:[48.3254,49.0503,49.7861,50.5329,51.2909,52.0602,52.8411,53.6338,54.4383],c:[33.8278,34.3352,34.8503,35.373,35.9036,36.4422,36.9888,37.5436,38.1068]},
+  {id:"e13",name:"Air Truck",grupo:"Especialidade",v:[74.6622,75.7821,76.9188,78.0726,79.2437,80.4324,81.6388,82.8634,84.1064],c:[52.2635,53.0475,53.8432,54.6508,55.4706,56.3026,57.1472,58.0044,58.8745]},
+  {id:"e14",name:"Arquplant",grupo:"Especialidade",v:[55.6251,56.4594,57.3063,58.1659,59.0384,59.924,60.8229,61.7352,62.6612],c:[38.9375,39.5216,40.1144,40.7162,41.3269,41.9468,42.576,43.2146,43.8629]},
+  {id:"e15",name:"Big Red 10L",grupo:"Especialidade",v:[144.2151,146.3783,148.574,150.8026,153.0646,155.3606,157.691,160.0564,162.4572],c:[100.9506,102.4648,104.0018,105.5618,107.1452,108.7524,110.3837,112.0395,113.7201]},
+  {id:"e16",name:"Biocel",grupo:"Especialidade",v:[179.3356,182.0256,184.756,187.5273,190.3402,193.1954,196.0933,199.0347,202.0202],c:[125.5349,127.4179,129.3292,131.2691,133.2382,135.2367,137.2653,139.3243,141.4141]},
+  {id:"e17",name:"Booster Infinity 10L",grupo:"Especialidade",v:[193.3164,196.2162,199.1594,202.1468,205.179,208.2567,211.3806,214.5513,217.7695],c:[135.3215,137.3513,139.4116,141.5028,143.6253,145.7797,147.9664,150.1859,152.4387]},
+  {id:"e18",name:"Booster Pro 20L",grupo:"Especialidade",v:[153.4234,155.7248,158.0606,160.4316,162.838,165.2806,167.7598,170.2762,172.8303],c:[107.3964,109.0073,110.6424,112.3021,113.9866,115.6964,117.4319,119.1933,120.9812]},
+  {id:"e19",name:"Boro Super 10L",grupo:"Especialidade",v:[32.2072,32.6903,33.1807,33.6784,34.1836,34.6963,35.2168,35.745,36.2812],c:[22.545,22.8832,23.2265,23.5749,23.9285,24.2874,24.6517,25.0215,25.3968]},
+  {id:"e20",name:"Bt Control 1X10Lt",grupo:"Especialidade",v:[83.4459,84.6976,85.9681,87.2576,88.5665,89.895,91.2434,92.6121,94.0012],c:[58.4122,59.2883,60.1777,61.0803,61.9965,62.9265,63.8704,64.8284,65.8009]},
+  {id:"e21",name:"Cal Super 10 Lt",grupo:"Especialidade",v:[32.4268,32.9132,33.4069,33.908,34.4166,34.9329,35.4569,35.9887,36.5286],c:[22.6988,23.0392,23.3848,23.7356,24.0916,24.453,24.8198,25.1921,25.57]},
+  {id:"e22",name:"Concentrat Fix 5L",grupo:"Especialidade",v:[278.1531,282.3254,286.5603,290.8587,295.2216,299.6499,304.1447,308.7069,313.3375],c:[194.7072,197.6278,200.5922,203.6011,206.6551,209.755,212.9013,216.0948,219.3362]},
+  {id:"e23",name:"Concentrat Mag 10L",grupo:"Especialidade",v:[59.8322,60.7297,61.6406,62.5652,63.5037,64.4563,65.4231,66.4045,67.4005],c:[41.8825,42.5108,43.1484,43.7957,44.4526,45.1194,45.7962,46.4831,47.1804]},
+  {id:"e24",name:"Concentrat Mn 10L",grupo:"Especialidade",v:[46.027,46.7174,47.4182,48.1295,48.8514,49.5842,50.3279,51.0829,51.8491],c:[32.2189,32.7022,33.1927,33.6906,34.196,34.7089,35.2296,35.758,36.2944]},
+  {id:"e25",name:"Eficazcontrol -6X2 Lt",grupo:"Especialidade",v:[527.027,534.9324,542.9564,551.1007,559.3673,567.7578,576.2741,584.9182,593.692],c:[368.9189,374.4527,380.0695,385.7705,391.5571,397.4304,403.3919,409.4428,415.5844]},
+  {id:"e26",name:"Ferriflo 10L",grupo:"Especialidade",v:[130.4245,132.3809,134.3666,136.3821,138.4279,140.5043,142.6118,144.751,146.9223],c:[91.2972,92.6666,94.0566,95.4675,96.8995,98.353,99.8283,101.3257,102.8456]},
+  {id:"e27",name:"Fluiflex Max",grupo:"Especialidade",v:[64.4144,65.3806,66.3613,67.3568,68.3671,69.3926,70.4335,71.49,72.5624],c:[45.0901,45.7664,46.4529,47.1497,47.857,48.5748,49.3035,50.043,50.7937]},
+  {id:"e28",name:"Flycontrol - 6X2Lt",grupo:"Especialidade",v:[260.5856,264.4944,268.4618,272.4887,276.576,280.7247,284.9355,289.2096,293.5477],c:[182.4099,185.1461,187.9232,190.7421,193.6032,196.5073,199.4549,202.4467,205.4834]},
+  {id:"e29",name:"Freefos 10L",grupo:"Especialidade",v:[36.8187,37.371,37.9315,38.5005,39.078,39.6642,40.2592,40.863,41.476],c:[25.7731,26.1597,26.5521,26.9504,27.3546,27.7649,28.1814,28.6041,29.0332]},
+  {id:"e30",name:"Frontiercontrol - 5L",grupo:"Especialidade",v:[115.9459,117.6851,119.4504,121.2422,123.0608,124.9067,126.7803,128.682,130.6122],c:[81.1622,82.3796,83.6153,84.8695,86.1426,87.4347,88.7462,90.0774,91.4286]},
+  {id:"e31",name:"Isacontrol 2X5 Lt",grupo:"Especialidade",v:[190.3153,193.17,196.0676,199.0086,201.9937,205.0236,208.099,211.2205,214.3888],c:[133.2207,135.219,137.2473,139.306,141.3956,143.5165,145.6693,147.8543,150.0722]},
+  {id:"e32",name:"Kit Gammon",grupo:"Especialidade",v:[1317.4358,1337.1973,1357.2553,1377.6141,1398.2783,1419.2525,1440.5413,1462.1494,1484.0816],c:[922.205,936.0381,950.0787,964.3299,978.7948,993.4767,1008.3789,1023.5046,1038.8571]},
+  {id:"e33",name:"Kmax 10L",grupo:"Especialidade",v:[33.4516,33.9533,34.4626,34.9796,35.5043,36.0368,36.5774,37.1261,37.683],c:[23.4161,23.7673,24.1239,24.4857,24.853,25.2258,25.6042,25.9882,26.3781]},
+  {id:"e34",name:"Maxi Zinc 10 L",grupo:"Especialidade",v:[110.4707,112.1278,113.8097,115.5168,117.2496,119.0083,120.7935,122.6054,124.4444],c:[77.3295,78.4894,79.6668,80.8618,82.0747,83.3058,84.5554,85.8238,87.1111]},
+  {id:"e35",name:"Megatron",grupo:"Especialidade",v:[55.3378,56.1679,57.0104,57.8656,58.7336,59.6146,60.5088,61.4164,62.3377],c:[38.7365,39.3175,39.9073,40.5059,41.1135,41.7302,42.3561,42.9915,43.6364]},
+  {id:"e36",name:"Methacontrol Evolution - 5L",grupo:"Especialidade",v:[182.9955,185.7404,188.5265,191.3544,194.2247,197.1381,200.0952,203.0966,206.1431],c:[128.0968,130.0183,131.9686,133.9481,135.9573,137.9967,140.0666,142.1676,144.3001]},
+  {id:"e37",name:"Nemacontrol Super 6X2Lt",grupo:"Especialidade",v:[746.6216,757.8209,769.1882,780.7261,792.437,804.3235,816.3884,828.6342,841.0637],c:[522.6351,530.4746,538.4318,546.5082,554.7059,563.0265,571.4719,580.0439,588.7446]},
+  {id:"e38",name:"Nitamin 1000L",grupo:"Especialidade",v:[13.8052,14.0123,14.2224,14.4358,14.6523,14.8721,15.0952,15.3216,15.5514],c:[9.6636,9.8086,9.9557,10.105,10.2566,10.4105,10.5666,10.7251,10.886]},
+  {id:"e39",name:"Nitamin 20L",grupo:"Especialidade",v:[16.1036,16.3452,16.5903,16.8392,17.0918,17.3482,17.6084,17.8725,18.1406],c:[11.2725,11.4416,11.6132,11.7874,11.9642,12.1437,12.3259,12.5108,12.6984]},
+  {id:"e40",name:"Phos- Up 1,5 X10",grupo:"Especialidade",v:[614.8648,624.0878,633.4491,642.9509,652.5951,662.3841,672.3198,682.4046,692.6407],c:[430.4054,436.8615,443.4144,450.0656,456.8166,463.6688,470.6239,477.6832,484.8485]},
+  {id:"e41",name:"Prev-Am",grupo:"Especialidade",v:[86.3739,87.6695,88.9845,90.3193,91.6741,93.0492,94.4449,95.8616,97.2995],c:[60.4617,61.3686,62.2892,63.2235,64.1719,65.1344,66.1114,67.1031,68.1097]},
+  {id:"e42",name:"Reforce Ultra",grupo:"Especialidade",v:[138.0811,140.1523,142.2546,144.3884,146.5542,148.7525,150.9838,153.2486,155.5473],c:[96.6568,98.1066,99.5782,101.0719,102.588,104.1268,105.6887,107.274,108.8831]},
+  {id:"e43",name:"Simbiose Maiz- 100 Ds",grupo:"Especialidade",v:[4.9775,5.0521,5.1279,5.2048,5.2829,5.3622,5.4426,5.5242,5.6071],c:[3.4842,3.5365,3.5895,3.6434,3.698,3.7535,3.8098,3.867,3.925]},
+  {id:"e44",name:"Simbiose Nod 200 Ds",grupo:"Especialidade",v:[1.464,1.4859,1.5082,1.5308,1.5538,1.5771,1.6008,1.6248,1.6491],c:[1.0248,1.0401,1.0557,1.0716,1.0877,1.104,1.1205,1.1373,1.1544]},
+  {id:"e45",name:"Solubphos - 6X2Lt",grupo:"Especialidade",v:[731.982,742.9617,754.1061,765.4177,776.899,788.5525,800.3807,812.3865,824.5723],c:[512.3874,520.0732,527.8743,535.7924,543.8293,551.9867,560.2665,568.6705,577.2006]},
+  {id:"e46",name:"Stimucontrol Evolution S - 5L",grupo:"Especialidade",v:[197.6351,200.5997,203.6087,206.6628,209.7627,212.9092,216.1028,219.3443,222.6345],c:[138.3446,140.4198,142.5261,144.6639,146.8339,149.0364,151.272,153.541,155.8442]},
+  {id:"e47",name:"Stimucontrol S - 5L",grupo:"Especialidade",v:[90.7658,92.1272,93.5092,94.9118,96.3355,97.7805,99.2472,100.7359,102.247],c:[63.536,64.4891,65.4564,66.4383,67.4348,68.4464,69.473,70.5151,71.5729]},
+  {id:"e48",name:"Stimucontrol Ts - 6X2Lt",grupo:"Especialidade",v:[202.027,205.0574,208.1333,211.2553,214.4241,217.6405,220.9051,224.2187,227.5819],c:[141.4189,143.5402,145.6933,147.8787,150.0969,152.3483,154.6336,156.9531,159.3074]},
+  {id:"e49",name:"Vircontrol Sf - 6X1 Kg",grupo:"Especialidade",v:[607.545,616.6582,625.9081,635.2967,644.8261,654.4985,664.316,674.2808,684.395],c:[425.2815,431.6607,438.1357,444.7077,451.3783,458.149,465.0212,471.9965,479.0765]},
+  {id:"e50",name:"Wetcit 1X1000",grupo:"Especialidade",v:[72.759,73.8504,74.9581,76.0825,77.2238,78.3821,79.5578,80.7512,81.9625],c:[50.9313,51.6953,52.4707,53.2578,54.0566,54.8675,55.6905,56.5258,57.3737]},
+  {id:"e51",name:"Wetcit 1X20",grupo:"Especialidade",v:[78.7613,79.9427,81.1418,82.3589,83.5943,84.8482,86.121,87.4128,88.724],c:[55.1329,55.9599,56.7993,57.6513,58.516,59.3938,60.2847,61.1889,62.1068]},
+  {id:"e52",name:"Wetcit 1X200",grupo:"Especialidade",v:[75.9065,77.0451,78.2008,79.3738,80.5644,81.7729,82.9995,84.2445,85.5081],c:[53.1346,53.9316,54.7406,55.5617,56.3951,57.241,58.0996,58.9711,59.8557]},
+  {id:"e53",name:"Wetcit 4X5",grupo:"Especialidade",v:[83.0068,84.2519,85.5156,86.7984,88.1003,89.4218,90.7632,92.1246,93.5065],c:[58.1047,58.9763,59.8609,60.7589,61.6702,62.5953,63.5342,64.4872,65.4545]},
+  {id:"pp01",name:"2,4 D",grupo:"Pos Patente",v:[18.6621,18.942,19.2262,19.5146,19.8073,20.1044,20.406,20.712,21.0227],c:[14.9297,15.1536,15.3809,15.6117,15.8458,16.0835,16.3248,16.5696,16.8182]},
+  {id:"pp02",name:"Acefato",grupo:"Pos Patente",v:[49.1379,49.875,50.6231,51.3825,52.1532,52.9355,53.7296,54.5355,55.3535],c:[39.3104,39.9,40.4985,41.106,41.7226,42.3484,42.9836,43.6284,44.2828]},
+  {id:"pp03",name:"Aceta + Bifentrina",grupo:"Pos Patente",v:[94.1512,95.5634,96.9969,98.4519,99.9286,101.4276,102.949,104.4932,106.0606],c:[75.3209,76.4508,77.5975,78.7615,79.9429,81.142,82.3592,83.5946,84.8485]},
+  {id:"pp04",name:"Acetamiprid  200",grupo:"Pos Patente",v:[25.0509,25.4267,25.8081,26.1952,26.5882,26.987,27.3918,27.8027,28.2197],c:[20.0408,20.3414,20.6465,20.9562,21.2705,21.5896,21.9134,22.2421,22.5758]},
+  {id:"pp05",name:"Acetamiprid  725",grupo:"Pos Patente",v:[76.8453,77.998,79.1679,80.3555,81.5608,82.7842,84.026,85.2864,86.5657],c:[61.4762,62.3984,63.3344,64.2844,65.2486,66.2274,67.2208,68.2291,69.2525]},
+  {id:"pp06",name:"Aurora 4X5",grupo:"Pos Patente",v:[344.7166,349.8874,355.1357,360.4627,365.8696,371.3577,376.9281,382.582,388.3207],c:[275.7733,279.9099,284.1085,288.3702,292.6957,297.0862,301.5424,306.0656,310.6566]},
+  {id:"pp07",name:"Avatar 4X5 Lt",grupo:"Pos Patente",v:[189.625,192.4693,195.3564,198.2867,201.261,204.2799,207.3441,210.4543,213.6111],c:[151.7,153.9755,156.2851,158.6294,161.0088,163.4239,165.8753,168.3634,170.8889]},
+  {id:"pp08",name:"Benevia",grupo:"Pos Patente",v:[241.027,244.6424,248.3121,252.0367,255.8173,259.6546,263.5494,267.5026,271.5152],c:[192.8216,195.7139,198.6496,201.6294,204.6538,207.7236,210.8395,214.0021,217.2121]},
+  {id:"pp09",name:"Bifentrina 100",grupo:"Pos Patente",v:[31.3837,31.8545,32.3323,32.8173,33.3095,33.8092,34.3163,34.8311,35.3535],c:[25.107,25.4836,25.8658,26.2538,26.6476,27.0473,27.4531,27.8649,28.2828]},
+  {id:"pp10",name:"Bifentrina 400",grupo:"Pos Patente",v:[81.5641,82.7875,84.0293,85.2898,86.5691,87.8677,89.1857,90.5235,91.8813],c:[65.2513,66.23,67.2235,68.2318,69.2553,70.2941,71.3485,72.4188,73.5051]},
+  {id:"pp11",name:"Bravengis",grupo:"Pos Patente",v:[42.7715,43.4131,44.0643,44.7253,45.3961,46.0771,46.7682,47.4698,48.1818],c:[34.2172,34.7305,35.2514,35.7802,36.3169,36.8617,37.4146,37.9758,38.5455]},
+  {id:"pp12",name:"Carfentrazona",grupo:"Pos Patente",v:[324.1939,329.0568,333.9927,339.0025,344.0876,349.2489,354.4876,359.8049,365.202],c:[259.3551,263.2454,267.1941,271.202,275.2701,279.3991,283.5901,287.844,292.1616]},
+  {id:"pp13",name:"Cipermetrina",grupo:"Pos Patente",v:[33.6254,34.1298,34.6417,35.1614,35.6888,36.2241,36.7675,37.319,37.8788],c:[26.9003,27.3038,27.7134,28.1291,28.551,28.9793,29.414,29.8552,30.303]},
+  {id:"pp14",name:"Cletodim 240",grupo:"Pos Patente",v:[30.8793,31.3425,31.8127,32.2899,32.7742,33.2658,33.7648,34.2713,34.7854],c:[24.7035,25.074,25.4501,25.8319,26.2194,26.6127,27.0118,27.417,27.8283]},
+  {id:"pp15",name:"Clorfenapir",grupo:"Pos Patente",v:[44.8339,45.5064,46.189,46.8818,47.5851,48.2988,49.0233,49.7587,50.5051],c:[35.8671,36.4051,36.9512,37.5055,38.068,38.6391,39.2187,39.8069,40.404]},
+  {id:"pp16",name:"Clorimuron",grupo:"Pos Patente",v:[58.9454,59.8295,60.727,61.6379,62.5625,63.5009,64.4534,65.4202,66.4015],c:[47.1563,47.8636,48.5816,49.3103,50.05,50.8007,51.5627,52.3362,53.1212]},
+  {id:"pp17",name:"Clorotalonil",grupo:"Pos Patente",v:[29.2317,29.6702,30.1152,30.567,31.0255,31.4908,31.9632,32.4427,32.9293],c:[23.3854,23.7361,24.0922,24.4536,24.8204,25.1927,25.5706,25.9541,26.3434]},
+  {id:"pp18",name:"Clorpirifos",grupo:"Pos Patente",v:[31.3837,31.8545,32.3323,32.8173,33.3095,33.8092,34.3163,34.8311,35.3535],c:[25.107,25.4836,25.8658,26.2538,26.6476,27.0473,27.4531,27.8649,28.2828]},
+  {id:"pp19",name:"Difenoconazol",grupo:"Pos Patente",v:[43.713,44.3687,45.0343,45.7098,46.3954,47.0914,47.7977,48.5147,49.2424],c:[34.9704,35.495,36.0274,36.5678,37.1163,37.6731,38.2382,38.8118,39.3939]},
+  {id:"pp20",name:"Diquate",grupo:"Pos Patente",v:[19.6148,19.9091,20.2077,20.5108,20.8185,21.1307,21.4477,21.7694,22.096],c:[15.6919,15.9272,16.1661,16.4086,16.6548,16.9046,17.1582,17.4155,17.6768]},
+  {id:"pp21",name:"Fipronil  250Fs",grupo:"Pos Patente",v:[105.3597,106.94,108.5441,110.1723,111.8249,113.5023,115.2048,116.9329,118.6869],c:[84.2877,85.552,86.8353,88.1378,89.4599,90.8018,92.1638,93.5463,94.9495]},
+  {id:"pp22",name:"Fipronil  800Wg",grupo:"Pos Patente",v:[302.6288,307.1682,311.7757,316.4524,321.1992,326.0172,330.9074,335.871,340.9091],c:[242.103,245.7346,249.4206,253.1619,256.9593,260.8137,264.7259,268.6968,272.7273]},
+  {id:"pp23",name:"Fluazinan",grupo:"Pos Patente",v:[82.9427,84.1868,85.4496,86.7314,88.0324,89.3529,90.6931,92.0535,93.4343],c:[66.3542,67.3495,68.3597,69.3851,70.4259,71.4823,72.5545,73.6428,74.7475]},
+  {id:"pp24",name:"Flumioxazina",grupo:"Pos Patente",v:[95.272,96.7011,98.1516,99.6239,101.1183,102.635,104.1746,105.7372,107.3232],c:[76.2176,77.3609,78.5213,79.6991,80.8946,82.108,83.3396,84.5897,85.8586]},
+  {id:"pp25",name:"Flumioxazina 800",grupo:"Pos Patente",v:[166.67,169.1701,171.7076,174.2832,176.8975,179.5509,182.2442,184.9779,187.7525],c:[133.336,135.336,137.3661,139.4266,141.518,143.6407,145.7954,147.9823,150.202]},
+  {id:"pp26",name:"Glifosato 540",grupo:"Pos Patente",v:[25.107,25.4836,25.8658,26.2538,26.6476,27.0473,27.4531,27.8649,28.2828],c:[20.0856,20.3869,20.6927,21.0031,21.3181,21.6379,21.9624,22.2919,22.6263]},
+  {id:"pp27",name:"Glifosato Wg",grupo:"Pos Patente",v:[25.7795,26.1662,26.5587,26.9571,27.3614,27.7718,28.1884,28.6112,29.0404],c:[20.6236,20.9329,21.2469,21.5656,21.8891,22.2175,22.5507,22.889,23.2323]},
+  {id:"pp28",name:"Glufosinato 200",grupo:"Pos Patente",v:[15.86,16.0979,16.3394,16.5844,16.8332,17.0857,17.342,17.6021,17.8662],c:[12.688,12.8783,13.0715,13.2676,13.4666,13.6686,13.8736,14.0817,14.2929]},
+  {id:"pp29",name:"Glufosinato 800",grupo:"Pos Patente",v:[40.0143,40.6145,41.2237,41.842,42.4697,43.1067,43.7533,44.4096,45.0758],c:[32.0114,32.4916,32.9789,33.4736,33.9757,34.4854,35.0027,35.5277,36.0606]},
+  {id:"pp30",name:"Haloxifope",grupo:"Pos Patente",v:[110.6613,112.3212,114.006,115.7161,117.4518,119.2136,121.0018,122.8168,124.6591],c:[88.529,89.8569,91.2048,92.5729,93.9615,95.3709,96.8014,98.2535,99.7273]},
+  {id:"pp31",name:"Hero 4X5L",grupo:"Pos Patente",v:[139.6352,141.7297,143.8556,146.0135,148.2037,150.4267,152.6831,154.9734,157.298],c:[111.7081,113.3838,115.0845,116.8108,118.5629,120.3414,122.1465,123.9787,125.8384]},
+  {id:"pp32",name:"Imazetapir 106",grupo:"Pos Patente",v:[30.7785,31.2401,31.7087,32.1844,32.6671,33.1572,33.6545,34.1593,34.6717],c:[24.6228,24.9921,25.367,25.7475,26.1337,26.5257,26.9236,27.3275,27.7374]},
+  {id:"pp33",name:"Imidacloprido 700",grupo:"Pos Patente",v:[81.5753,82.7989,84.0409,85.3015,86.581,87.8797,89.1979,90.5359,91.8939],c:[65.2602,66.2391,67.2327,68.2412,69.2648,70.3038,71.3583,72.4287,73.5152]},
+  {id:"pp34",name:"Kromstar",grupo:"Pos Patente",v:[140.1059,142.2075,144.3406,146.5057,148.7033,150.9339,153.1979,155.4958,157.8283],c:[112.0847,113.766,115.4725,117.2046,118.9627,120.7471,122.5583,124.3967,126.2626]},
+  {id:"pp35",name:"Lambda-Cialotrina",grupo:"Pos Patente",v:[49.3173,50.057,50.8079,51.57,52.3436,53.1287,53.9257,54.7345,55.5556],c:[39.4538,40.0456,40.6463,41.256,41.8749,42.503,43.1405,43.7876,44.4444]},
+  {id:"pp36",name:"Lufenurom 50",grupo:"Pos Patente",v:[28.0212,28.4415,28.8681,29.3011,29.7407,30.1868,30.6396,31.0992,31.5657],c:[22.4169,22.7532,23.0945,23.4409,23.7925,24.1494,24.5117,24.8793,25.2525]},
+  {id:"pp37",name:"Mancozeb Wg",grupo:"Pos Patente",v:[31.0923,31.5587,32.0321,32.5126,33.0002,33.4952,33.9977,34.5076,35.0253],c:[24.8738,25.247,25.6257,26.01,26.4002,26.7962,27.1981,27.6061,28.0202]},
+  {id:"pp38",name:"Mesotriona",grupo:"Pos Patente",v:[61.6466,62.5713,63.5099,64.4625,65.4295,66.4109,67.4071,68.4182,69.4444],c:[49.3173,50.057,50.8079,51.57,52.3436,53.1287,53.9257,54.7345,55.5556]},
+  {id:"pp39",name:"Metomil 215",grupo:"Pos Patente",v:[20.2873,20.5916,20.9005,21.214,21.5322,21.8552,22.1831,22.5158,22.8535],c:[16.2299,16.4733,16.7204,16.9712,17.2258,17.4842,17.7464,18.0126,18.2828]},
+  {id:"pp40",name:"Metomil 900",grupo:"Pos Patente",v:[80.6898,81.9001,83.1287,84.3756,85.6412,86.9258,88.2297,89.5532,90.8965],c:[64.5518,65.5201,66.5029,67.5005,68.513,69.5407,70.5838,71.6425,72.7172]},
+  {id:"pp41",name:"Mustang 4X5L",grupo:"Pos Patente",v:[13.0691,13.2651,13.4641,13.6661,13.871,14.0791,14.2903,14.5047,14.7222],c:[10.4553,10.6121,10.7713,10.9328,11.0968,11.2633,11.4322,11.6037,11.7778]},
+  {id:"pp42",name:"Osuva",grupo:"Pos Patente",v:[337.3302,342.3902,347.526,352.7389,358.03,363.4005,368.8515,374.3842,380.0],c:[269.8642,273.9121,278.0208,282.1911,286.424,290.7204,295.0812,299.5074,304.0]},
+  {id:"pp43",name:"Piraclostrobina + Epoxiconazol",grupo:"Pos Patente",v:[86.4622,87.7591,89.0755,90.4116,91.7678,93.1443,94.5415,95.9596,97.399],c:[69.1697,70.2073,71.2604,72.3293,73.4142,74.5154,75.6332,76.7677,77.9192]},
+  {id:"pp44",name:"Piriproxifem",grupo:"Pos Patente",v:[34.2979,34.8124,35.3346,35.8646,36.4026,36.9486,37.5028,38.0654,38.6364],c:[27.4383,27.8499,28.2677,28.6917,29.1221,29.5589,30.0023,30.4523,30.9091]},
+  {id:"pp45",name:"Premio 4X5 L",grupo:"Pos Patente",v:[435.6734,442.2085,448.8416,455.5742,462.4078,469.344,476.3841,483.5299,490.7828],c:[348.5387,353.7668,359.0733,364.4594,369.9263,375.4752,381.1073,386.8239,392.6263]},
+  {id:"pp46",name:"Premio Star",grupo:"Pos Patente",v:[186.3857,189.1815,192.0192,194.8995,197.823,200.7903,203.8022,206.8592,209.9621],c:[149.1086,151.3452,153.6154,155.9196,158.2584,160.6323,163.0418,165.4874,167.9697]},
+  {id:"pp47",name:"Rovral Sc",grupo:"Pos Patente",v:[123.764,125.6204,127.5047,129.4173,131.3586,133.3289,135.3289,137.3588,139.4192],c:[99.0112,100.4963,102.0038,103.5338,105.0869,106.6632,108.2631,109.887,111.5354]},
+  {id:"pp48",name:"S-Metolacloro",grupo:"Pos Patente",v:[36.988,37.5428,38.1059,38.6775,39.2577,39.8465,40.4442,41.0509,41.6667],c:[29.5904,30.0342,30.4847,30.942,31.4061,31.8772,32.3554,32.8407,33.3333]},
+  {id:"pp49",name:"Talisman 4X5 Lt",grupo:"Pos Patente",v:[64.7962,65.7681,66.7547,67.756,68.7723,69.8039,70.851,71.9137,72.9924],c:[51.8369,52.6145,53.4037,54.2048,55.0178,55.8431,56.6808,57.531,58.3939]},
+  {id:"pp50",name:"Talstar 400 1X10 Lt",grupo:"Pos Patente",v:[125.9608,127.8502,129.768,131.7145,133.6902,135.6956,137.731,139.797,141.8939],c:[100.7687,102.2802,103.8144,105.3716,106.9522,108.5565,110.1848,111.8376,113.5152]},
+  {id:"pp51",name:"Tebuconazole",grupo:"Pos Patente",v:[34.1858,34.6986,35.2191,35.7474,36.2836,36.8279,37.3803,37.941,38.5101],c:[27.3487,27.7589,28.1753,28.5979,29.0269,29.4623,29.9042,30.3528,30.8081]},
+  {id:"pp52",name:"Teburaz (1X20Lt) - 040",grupo:"Pos Patente",v:[47.0756,47.7817,48.4984,49.2259,49.9643,50.7138,51.4745,52.2466,53.0303],c:[37.6605,38.2254,38.7988,39.3807,39.9715,40.571,41.1796,41.7973,42.4242]},
+  {id:"pp53",name:"Tiofanato Metilico",grupo:"Pos Patente",v:[28.0212,28.4415,28.8681,29.3011,29.7407,30.1868,30.6396,31.0992,31.5657],c:[22.4169,22.7532,23.0945,23.4409,23.7925,24.1494,24.5117,24.8793,25.2525]},
+  {id:"pp54",name:"Triclopir",grupo:"Pos Patente",v:[47.58,48.2937,49.0181,49.7533,50.4996,51.2571,52.026,52.8064,53.5985],c:[38.064,38.6349,39.2145,39.8027,40.3997,41.0057,41.6208,42.2451,42.8788]},
+  {id:"sm01",name:"71KA72",grupo:"Semente",v:[10950.0,11147.1,11347.7478,11552.0073,11759.9434,11971.6224,12187.1116,12406.4796,12629.7962],c:[8760.0,8917.68,9078.1982,9241.6058,9407.9547,9577.2979,9749.6893,9925.1837,10103.837]},
+  {id:"sm02",name:"76KA72",grupo:"Semente",v:[9950.0,10129.1,10311.4238,10497.0294,10685.976,10878.3235,11074.1333,11273.4677,11476.3902],c:[7960.0,8103.28,8249.139,8397.6235,8548.7808,8702.6588,8859.3067,9018.7742,9181.1121]},
+  {id:"sm03",name:"79KA72",grupo:"Semente",v:[10825.0,11019.85,11218.2073,11420.135,11625.6975,11834.96,12047.9893,12264.8531,12485.6205],c:[8660.0,8815.88,8974.5658,9136.108,9300.558,9467.968,9638.3914,9811.8825,9988.4964]},
+  {id:"sm04",name:"80KA72",grupo:"Semente",v:[10512.5,10701.725,10894.3561,11090.4545,11290.0826,11493.3041,11700.1836,11910.7869,12125.1811],c:[8410.0,8561.38,8715.4848,8872.3636,9032.0661,9194.6433,9360.1469,9528.6295,9700.1449]},
+  {id:"sm05",name:"BRAUNA I2X",grupo:"Semente",v:[12103.5533,12321.4173,12543.2028,12768.9804,12998.8221,13232.8009,13470.9913,13713.4691,13960.3116],c:[9682.8426,9857.1338,10034.5622,10215.1843,10399.0577,10586.2407,10776.793,10970.7753,11168.2493]},
+  {id:"sm06",name:"Bonus",grupo:"Semente",v:[12887.5,13119.475,13355.6256,13596.0268,13840.7553,14089.8889,14343.5069,14601.69,14864.5204],c:[10310.0,10495.58,10684.5004,10876.8214,11072.6042,11271.9111,11474.8055,11681.352,11891.6163]},
+  {id:"sm07",name:"C2705 CE",grupo:"Semente",v:[10075.0,10256.35,10440.9643,10628.9017,10820.2219,11014.9859,11213.2556,11415.0942,11620.5659],c:[8060.0,8205.08,8352.7714,8503.1213,8656.1775,8811.9887,8970.6045,9132.0754,9296.4527]},
+  {id:"sm08",name:"C2795 CE",grupo:"Semente",v:[10512.5,10701.725,10894.3561,11090.4545,11290.0826,11493.3041,11700.1836,11910.7869,12125.1811],c:[8410.0,8561.38,8715.4848,8872.3636,9032.0661,9194.6433,9360.1469,9528.6295,9700.1449]},
+  {id:"sm09",name:"C2810CE",grupo:"Semente",v:[11196.1929,11397.7244,11602.8834,11811.7353,12024.3465,12240.7848,12461.1189,12685.419,12913.7566],c:[8956.9543,9118.1795,9282.3067,9449.3882,9619.4772,9792.6278,9968.8951,10148.3352,10331.0053]},
+  {id:"sm10",name:"Cartago",grupo:"Semente",v:[10137.5,10319.975,10505.7346,10694.8378,10887.3449,11083.3171,11282.8168,11485.9075,11692.6538],c:[8110.0,8255.98,8404.5876,8555.8702,8709.8759,8866.6536,9026.2534,9188.726,9354.123]},
+  {id:"sm11",name:"Cobre",grupo:"Semente",v:[11550.0,11757.9,11969.5422,12184.994,12404.3239,12627.6017,12854.8985,13086.2867,13321.8398],c:[9240.0,9406.32,9575.6338,9747.9952,9923.4591,10102.0813,10283.9188,10469.0293,10657.4719]},
+  {id:"sm12",name:"Cruzada",grupo:"Semente",v:[12491.5,12716.347,12945.2412,13178.2556,13415.4642,13656.9425,13902.7675,14153.0173,14407.7716],c:[9993.2,10173.0776,10356.193,10542.6045,10732.3714,10925.554,11122.214,11322.4139,11526.2173]},
+  {id:"sm13",name:"DM 64IX65 I2X",grupo:"Semente",v:[13191.2625,13428.7052,13670.4219,13916.4895,14166.9863,14421.9921,14681.5879,14945.8565,15214.8819],c:[10553.01,10742.9642,10936.3375,11133.1916,11333.5891,11537.5937,11745.2703,11956.6852,12171.9055]},
+  {id:"sm14",name:"DM 70IX70 I2X",grupo:"Semente",v:[13025.225,13259.6791,13498.3533,13741.3236,13988.6675,14240.4635,14496.7918,14757.7341,15023.3733],c:[10420.18,10607.7432,10798.6826,10993.0589,11190.934,11392.3708,11597.4335,11806.1873,12018.6986]},
+  {id:"sm15",name:"DM 72IX74 I2X",grupo:"Semente",v:[12121.5,12339.687,12561.8014,12787.9138,13018.0962,13252.422,13490.9656,13733.8029,13981.0114],c:[9697.2,9871.7496,10049.4411,10230.331,10414.477,10601.9376,10792.7725,10987.0424,11184.8091]},
+  {id:"sm16",name:"DM 73I75 IPRO",grupo:"Semente",v:[14075.0,14328.35,14586.2603,14848.813,15116.0916,15388.1813,15665.1685,15947.1416,16234.1901],c:[11260.0,11462.68,11669.0082,11879.0504,12092.8733,12310.545,12532.1348,12757.7133,12987.3521]},
+  {id:"sm17",name:"DM 74K75 CE",grupo:"Semente",v:[11913.5,12127.943,12346.246,12568.4784,12794.711,13025.0158,13259.4661,13498.1365,13741.1029],c:[9530.8,9702.3544,9876.9968,10054.7827,10235.7688,10420.0126,10607.5729,10798.5092,10992.8824]},
+  {id:"sm18",name:"DM 75IX75 I2X",grupo:"Semente",v:[14200.0,14455.6,14715.8008,14980.6852,15250.3375,15524.8436,15804.2908,16088.768,16378.3659],c:[11360.0,11564.48,11772.6406,11984.5482,12200.27,12419.8749,12643.4326,12871.0144,13102.6927]},
+  {id:"sm19",name:"DM 78IX80 I2X",grupo:"Semente",v:[13887.775,14137.7549,14392.2345,14651.2948,14915.0181,15183.4884,15456.7912,15735.0134,16018.2437],c:[11110.22,11310.204,11513.7876,11721.0358,11932.0145,12146.7907,12365.4329,12588.0107,12814.5949]},
+  {id:"sm20",name:"DM 79K80 CE",grupo:"Semente",v:[13048.3375,13283.2076,13522.3053,13765.7068,14013.4895,14265.7323,14522.5155,14783.9208,15050.0314],c:[10438.67,10626.5661,10817.8442,11012.5654,11210.7916,11412.5859,11618.0124,11827.1366,12040.0251]},
+  {id:"sm21",name:"DM 82I78 IPRO",grupo:"Semente",v:[14450.0,14710.1,14974.8818,15244.4297,15518.8294,15798.1683,16082.5354,16372.021,16666.7174],c:[11560.0,11768.08,11979.9054,12195.5437,12415.0635,12638.5347,12866.0283,13097.6168,13333.3739]},
+  {id:"sm22",name:"Exata",grupo:"Semente",v:[10137.5,10319.975,10505.7346,10694.8378,10887.3449,11083.3171,11282.8168,11485.9075,11692.6538],c:[8110.0,8255.98,8404.5876,8555.8702,8709.8759,8866.6536,9026.2534,9188.726,9354.123]},
+  {id:"sm23",name:"GH2473 I2X",grupo:"Semente",v:[11126.3959,11326.6711,11530.5511,11738.1011,11949.3869,12164.4758,12383.4364,12606.3383,12833.2524],c:[8901.1168,9061.3369,9224.4409,9390.4809,9559.5095,9731.5807,9906.7491,10085.0706,10266.6019]},
+  {id:"sm24",name:"GH2481I2X",grupo:"Semente",v:[12750.7614,12980.2751,13213.9201,13451.7706,13693.9025,13940.3928,14191.3198,14446.7636,14706.8053],c:[10200.6091,10384.2201,10571.1361,10761.4165,10955.122,11152.3142,11353.0559,11557.4109,11765.4443]},
+  {id:"sm25",name:"GH2483IPRO",grupo:"Semente",v:[11595.9391,11804.666,12017.15,12233.4587,12453.6609,12677.8268,12906.0277,13138.3362,13374.8263],c:[9276.7513,9443.7328,9613.72,9786.7669,9962.9287,10142.2615,10324.8222,10510.669,10699.861]},
+  {id:"sm26",name:"Guepardo",grupo:"Semente",v:[10503.1625,10692.2194,10884.6794,11080.6036,11280.0545,11483.0954,11689.7912,11900.2074,12114.4111],c:[8402.53,8553.7755,8707.7435,8864.4829,9024.0436,9186.4764,9351.8329,9520.1659,9691.5289]},
+  {id:"sm27",name:"ITAUBA I2X",grupo:"Semente",v:[14489.3401,14750.1482,15015.6509,15285.9326,15561.0794,15841.1788,16126.32,16416.5938,16712.0925],c:[11591.4721,11800.1186,12012.5207,12228.7461,12448.8635,12672.9431,12901.056,13133.275,13369.674]},
+  {id:"sm28",name:"M 7222 I2X",grupo:"Semente",v:[9950.0,10129.1,10311.4238,10497.0294,10685.976,10878.3235,11074.1333,11273.4677,11476.3902],c:[7960.0,8103.28,8249.139,8397.6235,8548.7808,8702.6588,8859.3067,9018.7742,9181.1121]},
+  {id:"sm29",name:"M 7535 I2X",grupo:"Semente",v:[10325.0,10510.85,10700.0453,10892.6461,11088.7137,11288.3106,11491.5002,11698.3472,11908.9174],c:[8260.0,8408.68,8560.0362,8714.1169,8870.971,9030.6485,9193.2001,9358.6777,9527.1339]},
+  {id:"sm30",name:"M 7601 I2X",grupo:"Semente",v:[10325.0,10510.85,10700.0453,10892.6461,11088.7137,11288.3106,11491.5002,11698.3472,11908.9174],c:[8260.0,8408.68,8560.0362,8714.1169,8870.971,9030.6485,9193.2001,9358.6777,9527.1339]},
+  {id:"sm31",name:"Mitica",grupo:"Semente",v:[10262.5,10447.225,10635.2751,10826.71,11021.5908,11219.9794,11421.939,11627.5339,11836.8296],c:[8210.0,8357.78,8508.22,8661.368,8817.2726,8975.9835,9137.5512,9302.0272,9469.4636]},
+  {id:"sm32",name:"NEO550 I2X",grupo:"Semente",v:[10745.6853,10939.1076,11136.0116,11336.4598,11540.516,11748.2453,11959.7137,12174.9886,12394.1384],c:[8596.5482,8751.2861,8908.8092,9069.1678,9232.4128,9398.5963,9567.771,9739.9909,9915.3107]},
+  {id:"sm33",name:"NEO640 I2X",grupo:"Semente",v:[9808.0625,9984.6076,10164.3306,10347.2885,10533.5397,10723.1434,10916.16,11112.6509,11312.6786],c:[7846.45,7987.6861,8131.4644,8277.8308,8426.8318,8578.5147,8732.928,8890.1207,9050.1429]},
+  {id:"sm34",name:"NEO680 IPRO",grupo:"Semente",v:[9877.2625,10055.0532,10236.0442,10420.293,10607.8583,10798.7997,10993.1781,11191.0553,11392.4943],c:[7901.81,8044.0426,8188.8353,8336.2344,8486.2866,8639.0398,8794.5425,8952.8442,9113.9954]},
+  {id:"sm35",name:"NEO690 I2X",grupo:"Semente",v:[9683.0625,9857.3576,10034.7901,10215.4163,10399.2938,10586.4811,10777.0377,10971.0244,11168.5028],c:[7746.45,7885.8861,8027.832,8172.333,8319.435,8469.1849,8621.6302,8776.8195,8934.8023]},
+  {id:"sm36",name:"NEO700 I2X",grupo:"Semente",v:[10670.1875,10862.2509,11057.7714,11256.8113,11459.4339,11665.7037,11875.6864,12089.4487,12307.0588],c:[8536.15,8689.8007,8846.2171,9005.449,9167.5471,9332.563,9500.5491,9671.559,9845.647]},
+  {id:"sm37",name:"NEO760 CE",grupo:"Semente",v:[9700.0,9874.6,10052.3428,10233.285,10417.4841,10604.9988,10795.8888,10990.2148,11188.0387],c:[7760.0,7899.68,8041.8742,8186.628,8333.9873,8483.9991,8636.711,8792.1718,8950.4309]},
+  {id:"sm38",name:"NEO761 I2X",grupo:"Semente",v:[9907.5,10085.835,10267.38,10452.1929,10640.3323,10831.8583,11026.8318,11225.3147,11427.3704],c:[7926.0,8068.668,8213.904,8361.7543,8512.2659,8665.4867,8821.4654,8980.2518,9141.8963]},
+  {id:"sm39",name:"NEO771 I2X",grupo:"Semente",v:[10767.5,10961.315,11158.6187,11359.4738,11563.9443,11772.0953,11983.993,12199.7049,12419.2996],c:[8614.0,8769.052,8926.8949,9087.579,9251.1555,9417.6763,9587.1944,9759.7639,9935.4397]},
+  {id:"sm40",name:"NEO790 IPRO",grupo:"Semente",v:[12325.0,12546.85,12772.6933,13002.6018,13236.6486,13474.9083,13717.4566,13964.3709,14215.7295],c:[9860.0,10037.48,10218.1546,10402.0814,10589.3189,10779.9266,10973.9653,11171.4967,11372.5836]},
+  {id:"sm41",name:"NEO791 CE",grupo:"Semente",v:[11423.75,11629.3775,11838.7063,12051.803,12268.7355,12489.5727,12714.385,12943.2439,13176.2223],c:[9139.0,9303.502,9470.965,9641.4424,9814.9884,9991.6582,10171.508,10354.5952,10540.9779]},
+  {id:"sm42",name:"NEO800 I2X",grupo:"Semente",v:[11762.5,11974.225,12189.7611,12409.1767,12632.5419,12859.9277,13091.4064,13327.0517,13566.9386],c:[9410.0,9579.38,9751.8088,9927.3414,10106.0335,10287.9421,10473.1251,10661.6414,10853.5509]},
+  {id:"sm43",name:"NEO801 CE",grupo:"Semente",v:[10814.8875,11009.5555,11207.7275,11409.4666,11614.837,11823.904,12036.7343,12253.3955,12473.9566],c:[8651.91,8807.6444,8966.182,9127.5733,9291.8696,9459.1232,9629.3874,9802.7164,9979.1653]},
+  {id:"sm44",name:"NEO802 I2X",grupo:"Semente",v:[12450.0,12674.1,12902.2338,13134.474,13370.8945,13611.5706,13856.5789,14105.9973,14359.9053],c:[9960.0,10139.28,10321.787,10507.5792,10696.7156,10889.2565,11085.2631,11284.7979,11487.9242]},
+  {id:"sm45",name:"NEO820 IPRO",grupo:"Semente",v:[13950.0,14201.1,14456.7198,14716.9408,14981.8457,15251.5189,15526.0463,15805.5151,16090.0144],c:[11160.0,11360.88,11565.3758,11773.5526,11985.4766,12201.2151,12420.837,12644.4121,12872.0115]},
+  {id:"sm46",name:"Olimpo",grupo:"Semente",v:[11950.0,12165.1,12384.0718,12606.9851,12833.9108,13064.9212,13300.0898,13539.4914,13783.2023],c:[9560.0,9732.08,9907.2574,10085.5881,10267.1287,10451.937,10640.0718,10831.5931,11026.5618]},
+  {id:"sm47",name:"Raptor",grupo:"Semente",v:[10337.725,10523.8041,10713.2325,10906.0707,11102.38,11302.2228,11505.6628,11712.7648,11923.5945],c:[8270.18,8419.0432,8570.586,8724.8566,8881.904,9041.7783,9204.5303,9370.2118,9538.8756]},
+  {id:"sm48",name:"ST 711 I2X",grupo:"Semente",v:[9637.5,9810.975,9987.5726,10167.3489,10350.3611,10536.6676,10726.3277,10919.4016,11115.9508],c:[7710.0,7848.78,7990.058,8133.8791,8280.2889,8429.3341,8581.0621,8735.5212,8892.7606]},
+  {id:"sm49",name:"ST 745 I2X",grupo:"Semente",v:[9450.0,9620.1,9793.2618,9969.5405,10148.9922,10331.6741,10517.6442,10706.9618,10899.6871],c:[7560.0,7696.08,7834.6094,7975.6324,8119.1938,8265.3393,8414.1154,8565.5695,8719.7497]},
+  {id:"sm50",name:"ST 752 I2X",grupo:"Semente",v:[10200.0,10383.6,10570.5048,10760.7739,10954.4678,11151.6482,11352.3779,11556.7207,11764.7417],c:[8160.0,8306.88,8456.4038,8608.6191,8763.5743,8921.3186,9081.9023,9245.3766,9411.7933]},
+  {id:"sm51",name:"ST 828 I2X",grupo:"Semente",v:[11196.1929,11397.7244,11602.8834,11811.7353,12024.3465,12240.7848,12461.1189,12685.419,12913.7566],c:[8956.9543,9118.1795,9282.3067,9449.3882,9619.4772,9792.6278,9968.8951,10148.3352,10331.0053]},
+  {id:"sm52",name:"Sparta i2x",grupo:"Semente",v:[11887.5,12101.475,12319.3016,12541.049,12766.7879,12996.59,13230.5287,13468.6782,13711.1144],c:[9510.0,9681.18,9855.4412,10032.8392,10213.4303,10397.272,10584.4229,10774.9425,10968.8915]},
+  {id:"sm53",name:"TMG 2370",grupo:"Semente",v:[12367.5,12590.115,12816.7371,13047.4383,13282.2922,13521.3735,13764.7582,14012.5239,14264.7493],c:[9894.0,10072.092,10253.3897,10437.9507,10625.8338,10817.0988,11011.8066,11210.0191,11411.7994]},
+  {id:"sm54",name:"Tormenta",grupo:"Semente",v:[9913.5,10091.943,10273.598,10458.5227,10646.7761,10838.4181,11033.5096,11232.1128,11434.2908],c:[7930.8,8073.5544,8218.8784,8366.8182,8517.4209,8670.7345,8826.8077,8985.6903,9147.4327]},
+  {id:"sm55",name:"Torpedo",grupo:"Semente",v:[9443.6125,9613.5975,9786.6423,9962.8018,10142.1323,10324.6907,10510.5351,10699.7247,10892.3198],c:[7554.89,7690.878,7829.3138,7970.2415,8113.7058,8259.7525,8408.4281,8559.7798,8713.8558]},
+  {id:"sy01",name:"Actara 250 Wg 4X5 Kg",grupo:"Syngenta",v:[190.4584,193.3153,196.215,199.1583,202.1456,205.1778,208.2555,211.3793,214.55],c:[152.3667,154.6522,156.972,159.3266,161.7165,164.1422,166.6044,169.1034,171.64]},
+  {id:"sy02",name:"Alade",grupo:"Syngenta",v:[210.984,214.1488,217.361,220.6214,223.9308,227.2897,230.6991,234.1595,237.6719],c:[168.7872,171.319,173.8888,176.4971,179.1446,181.8318,184.5592,187.3276,190.1376]},
+  {id:"sy03",name:"Amistar Top 20 L",grupo:"Syngenta",v:[175.5227,178.1555,180.8279,183.5403,186.2934,189.0878,191.9241,194.803,197.725],c:[140.4181,142.5244,144.6623,146.8322,149.0347,151.2702,153.5393,155.8424,158.18]},
+  {id:"sy04",name:"Ampligo 20 L",grupo:"Syngenta",v:[269.609,273.6531,277.7579,281.9243,286.1531,290.4454,294.8021,299.2241,303.7125],c:[215.6872,218.9225,222.2063,225.5394,228.9225,232.3563,235.8417,239.3793,242.97]},
+  {id:"sy05",name:"Arvatico",grupo:"Syngenta",v:[406.6938,412.7942,418.9861,425.2709,431.6499,438.1247,444.6965,451.367,458.1375],c:[325.355,330.2353,335.1889,340.2167,345.3199,350.4997,355.7572,361.0936,366.51]},
+  {id:"sy06",name:"Bravonil",grupo:"Syngenta",v:[34.0215,34.5319,35.0498,35.5756,36.1092,36.6508,37.2006,37.7586,38.325],c:[27.2172,27.6255,28.0399,28.4605,28.8874,29.3207,29.7605,30.2069,30.66]},
+  {id:"sy07",name:"Calaris 20 L",grupo:"Syngenta",v:[59.8095,60.7067,61.6173,62.5415,63.4797,64.4319,65.3983,66.3793,67.375],c:[47.8476,48.5653,49.2938,50.0332,50.7837,51.5455,52.3187,53.1034,53.9]},
+  {id:"sy08",name:"Cruiser",grupo:"Syngenta",v:[394.129,400.0409,406.0415,412.1322,418.3141,424.5888,430.9577,437.422,443.9834],c:[315.3032,320.0327,324.8332,329.7057,334.6513,339.6711,344.7661,349.9376,355.1867]},
+  {id:"sy09",name:"Curyom 20 L",grupo:"Syngenta",v:[58.5778,59.4565,60.3484,61.2536,62.1724,63.105,64.0515,65.0123,65.9875],c:[46.8623,47.5652,48.2787,49.0029,49.7379,50.484,51.2412,52.0099,52.79]},
+  {id:"sy10",name:"Cypress",grupo:"Syngenta",v:[145.3818,147.5625,149.7759,152.0226,154.3029,156.6175,158.9667,161.3512,163.7715],c:[116.3054,118.05,119.8208,121.6181,123.4423,125.294,127.1734,129.081,131.0172]},
+  {id:"sy11",name:"Dual Gold 20 L",grupo:"Syngenta",v:[35.8635,36.4015,36.9475,37.5017,38.0642,38.6352,39.2147,39.803,40.4],c:[28.6908,29.1212,29.558,30.0014,30.4514,30.9082,31.3718,31.8424,32.32]},
+  {id:"sy12",name:"Eddus 4X5 L",grupo:"Syngenta",v:[46.627,47.3264,48.0363,48.7569,49.4882,50.2306,50.984,51.7488,52.525],c:[37.3016,37.8611,38.4291,39.0055,39.5906,40.1844,40.7872,41.399,42.02]},
+  {id:"sy13",name:"Elatus",grupo:"Syngenta",v:[391.4224,397.2937,403.2531,409.3019,415.4415,421.6731,427.9982,434.4182,440.9344],c:[313.1379,317.835,322.6025,327.4416,332.3532,337.3385,342.3986,347.5345,352.7475]},
+  {id:"sy14",name:"Elestal Neo",grupo:"Syngenta",v:[738.1984,749.2714,760.5104,771.9181,783.4969,795.2493,807.178,819.2857,831.575],c:[590.5587,599.4171,608.4083,617.5345,626.7975,636.1994,645.7424,655.4286,665.26]},
+  {id:"sy15",name:"Engeo Pleno S 20 L",grupo:"Syngenta",v:[127.9081,129.8267,131.7741,133.7507,135.757,137.7933,139.8602,141.9581,144.0875],c:[102.3265,103.8614,105.4193,107.0006,108.6056,110.2347,111.8882,113.5665,115.27]},
+  {id:"sy16",name:"Flex 4X5 L",grupo:"Syngenta",v:[63.0719,64.018,64.9782,65.9529,66.9422,67.9463,68.9655,70.0,71.05],c:[50.4575,51.2144,51.9826,52.7623,53.5538,54.3571,55.1724,56.0,56.84]},
+  {id:"sy17",name:"Fortenza",grupo:"Syngenta",v:[1351.4835,1371.7557,1392.3321,1413.2171,1434.4153,1455.9315,1477.7705,1499.9371,1522.4361],c:[1081.1868,1097.4046,1113.8657,1130.5736,1147.5322,1164.7452,1182.2164,1199.9497,1217.9489]},
+  {id:"sy18",name:"Influx 4X5 Kg",grupo:"Syngenta",v:[810.2805,822.4347,834.7712,847.2928,860.0022,872.9022,885.9958,899.2857,912.775],c:[648.2244,657.9478,667.817,677.8343,688.0018,698.3218,708.7966,719.4286,730.22]},
+  {id:"sy19",name:"Instivo 20 L",grupo:"Syngenta",v:[192.2449,195.1286,198.0555,201.0264,204.0418,207.1024,210.2089,213.3621,216.5625],c:[153.796,156.1029,158.4444,160.8211,163.2334,165.6819,168.1671,170.6897,173.25]},
+  {id:"sy20",name:"Invencis 20 L",grupo:"Syngenta",v:[505.3296,512.9095,520.6031,528.4122,536.3384,544.3834,552.5492,560.8374,569.25],c:[404.2636,410.3276,416.4825,422.7298,429.0707,435.5068,442.0394,448.67,455.4]},
+  {id:"sy21",name:"Inzak Zeon 20 L",grupo:"Syngenta",v:[88.3494,89.6747,91.0198,92.3851,93.7709,95.1774,96.6051,98.0542,99.525],c:[70.6796,71.7398,72.8158,73.9081,75.0167,76.142,77.2841,78.4433,79.62]},
+  {id:"sy22",name:"Match",grupo:"Syngenta",v:[40.2022,40.8053,41.4173,42.0386,42.6692,43.3092,43.9588,44.6182,45.2875],c:[32.1618,32.6442,33.1339,33.6309,34.1353,34.6474,35.1671,35.6946,36.23]},
+  {id:"sy23",name:"Maxim Xl 4X5 L",grupo:"Syngenta",v:[178.3412,181.0163,183.7315,186.4875,189.2848,192.1241,195.0059,197.931,200.9],c:[142.6729,144.813,146.9852,149.19,151.4278,153.6993,156.0048,158.3448,160.72]},
+  {id:"sy24",name:"Miravis Duo",grupo:"Syngenta",v:[187.0115,189.8167,192.6639,195.5539,198.4872,201.4645,204.4865,207.5538,210.6671],c:[149.6092,151.8533,154.1311,156.4431,158.7897,161.1716,163.5892,166.043,168.5337]},
+  {id:"sy25",name:"Miravis Pro",grupo:"Syngenta",v:[155.3059,157.6355,160.0,162.4,164.836,167.3086,169.8182,172.3655,174.9509],c:[124.2447,126.1084,128.0,129.92,131.8688,133.8468,135.8545,137.8924,139.9608]},
+  {id:"sy26",name:"Mitrion",grupo:"Syngenta",v:[264.9867,268.9615,272.9959,277.0908,281.2472,285.4659,289.7479,294.0941,298.5055],c:[211.9893,215.1692,218.3967,221.6727,224.9977,228.3727,231.7983,235.2753,238.8044]},
+  {id:"sy27",name:"Polytrin 4X5 L",grupo:"Syngenta",v:[39.7584,40.3547,40.9601,41.5745,42.1981,42.831,43.4735,44.1256,44.7875],c:[31.8067,32.2838,32.768,33.2596,33.7585,34.2648,34.7788,35.3005,35.83]},
+  {id:"sy28",name:"Poquer 1X20",grupo:"Syngenta",v:[43.6532,44.308,44.9726,45.6472,46.3319,47.0269,47.7323,48.4483,49.175],c:[34.9226,35.4464,35.9781,36.5178,37.0655,37.6215,38.1858,38.7586,39.34]},
+  {id:"sy29",name:"Primestra Gold 20 L",grupo:"Syngenta",v:[38.9705,39.5551,40.1484,40.7506,41.3619,41.9823,42.6121,43.2512,43.9],c:[31.1764,31.6441,32.1187,32.6005,33.0895,33.5859,34.0896,34.601,35.12]},
+  {id:"sy30",name:"Priori Top 20 L",grupo:"Syngenta",v:[175.5449,178.178,180.8507,183.5635,186.3169,189.1117,191.9484,194.8276,197.75],c:[140.4359,142.5424,144.6806,146.8508,149.0535,151.2893,153.5587,155.8621,158.2]},
+  {id:"sy31",name:"Priori Xtra (Azp) 20 L",grupo:"Syngenta",v:[125.4558,127.3376,129.2477,131.1864,133.1542,135.1515,137.1788,139.2365,141.325],c:[100.3646,101.8701,103.3981,104.9491,106.5233,108.1212,109.743,111.3892,113.06]},
+  {id:"sy32",name:"Proclaim 50 4X5 Kg",grupo:"Syngenta",v:[384.623,390.3924,396.2483,402.192,408.2249,414.3482,420.5635,426.8719,433.275],c:[307.6984,312.3139,316.9986,321.7536,326.5799,331.4786,336.4508,341.4975,346.62]},
+  {id:"sy33",name:"Proof 20 L",grupo:"Syngenta",v:[24.4232,24.7895,25.1613,25.5388,25.9218,26.3107,26.7053,27.1059,27.5125],c:[19.5385,19.8316,20.1291,20.431,20.7375,21.0485,21.3643,21.6847,22.01]},
+  {id:"sy34",name:"Reglone 20 L",grupo:"Syngenta",v:[33.2115,33.7097,34.2153,34.7285,35.2495,35.7782,36.3149,36.8596,37.4125],c:[26.5692,26.9677,27.3722,27.7828,28.1996,28.6226,29.0519,29.4877,29.93]},
+  {id:"sy35",name:"Score Flexi",grupo:"Syngenta",v:[256.0936,259.935,263.834,267.7916,271.8084,275.8856,280.0238,284.2242,288.4876],c:[204.8749,207.948,211.0672,214.2332,217.4467,220.7084,224.0191,227.3794,230.7901]},
+  {id:"sy36",name:"Seeker 1X20",grupo:"Syngenta",v:[254.2183,258.0315,261.902,265.8306,269.818,273.8653,277.9733,282.1429,286.375],c:[203.3746,206.4252,209.5216,212.6644,215.8544,219.0922,222.3786,225.7143,229.1]},
+  {id:"sy37",name:"Tilt 4X5 L",grupo:"Syngenta",v:[59.8761,60.7743,61.6859,62.6112,63.5503,64.5036,65.4711,66.4532,67.45],c:[47.9009,48.6194,49.3487,50.0889,50.8403,51.6029,52.3769,53.1626,53.96]},
+  {id:"sy38",name:"Topik 12X1",grupo:"Syngenta",v:[855.5871,868.4209,881.4472,894.6689,908.0889,921.7103,935.5359,949.569,963.8125],c:[684.4697,694.7367,705.1578,715.7351,726.4712,737.3682,748.4287,759.6552,771.05]},
+  {id:"sy39",name:"Verdavis 20 L",grupo:"Syngenta",v:[520.9311,528.745,536.6762,544.7264,552.8973,561.1907,569.6086,578.1527,586.825],c:[416.7449,422.996,429.341,435.7811,442.3178,448.9526,455.6869,462.5222,469.46]},
+  {id:"sy40",name:"Victrato",grupo:"Syngenta",v:[6227.4156,6320.8268,6415.6392,6511.8738,6609.5519,6708.6952,6809.3256,6911.4655,7015.1375],c:[4981.9325,5056.6615,5132.5114,5209.4991,5287.6415,5366.9562,5447.4605,5529.1724,5612.11]},
+  {id:"sy41",name:"Zapp Qi 20 L",grupo:"Syngenta",v:[28.8062,29.2383,29.6769,30.122,30.5739,31.0325,31.498,31.9704,32.45],c:[23.045,23.3907,23.7415,24.0976,24.4591,24.826,25.1984,25.5764,25.96]},
+  {id:"tsi01",name:"ARVATICO",grupo:"TSI",v:[1075.0,1094.35,1114.0483,1134.1012,1154.515,1175.2963,1196.4516,1217.9877,1239.9115],c:[860.0,875.48,891.2386,907.2809,923.612,940.237,957.1613,974.3902,991.9292]},
+  {id:"tsi02",name:"FORT DUO",grupo:"TSI",v:[2450.0,2494.1,2538.9938,2584.6957,2631.2202,2678.5822,2726.7967,2775.879,2825.8448],c:[1960.0,1995.28,2031.195,2067.7566,2104.9762,2142.8657,2181.4373,2220.7032,2260.6759]},
+  {id:"tsi03",name:"FORT ELITE",grupo:"TSI",v:[3137.5,3193.975,3251.4666,3309.9929,3369.5728,3430.2251,3491.9692,3554.8246,3618.8115],c:[2510.0,2555.18,2601.1732,2647.9944,2695.6583,2744.1801,2793.5753,2843.8597,2895.0492]},
+  {id:"tsi04",name:"INOCULANTE",grupo:"TSI",v:[637.5,648.975,660.6566,672.5484,684.6542,696.978,709.5236,722.295,735.2964],c:[510.0,519.18,528.5252,538.0387,547.7234,557.5824,567.6189,577.836,588.2371]},
+  {id:"tsi05",name:"VICTRATO",grupo:"TSI",v:[3575.0,3639.35,3704.8583,3771.5457,3839.4336,3908.5434,3978.8972,4050.5173,4123.4266],c:[2860.0,2911.48,2963.8866,3017.2366,3071.5469,3126.8347,3183.1177,3240.4138,3298.7413]},
+];
+
+var PRODUTOS = P.map(function(r){ return {id:r.id, name:r.name, grupo:r.grupo, v:r.v, c:r.c}; });
+var GRUPOS = ["Syngenta","Especialidade","Pos Patente","Semente","TSI"];
+var grupoAtual = "Syngenta";
+var mesIdx = 0;
+var cart = [];
+
+function fmtBRL(n){ return (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPct(n){ return (n*100).toFixed(1)+'%'; }
+
+// Setup mes selector
+function setupMes(){
+  var sel = document.getElementById('mes-select');
+  sel.innerHTML = DATAS.map(function(d,i){ return '<option value="'+i+'">'+d+'</option>'; }).join('');
+  // Default to current/closest month
+  var now = new Date();
+  var monthStr = now.toLocaleDateString('en-US',{month:'short',year:'2-digit'}).replace(' ','/')
+                    .replace('Aug','Aug').replace('Sep','Sep');
+  mesIdx = 0;
+  sel.value = mesIdx;
+  sel.addEventListener('change', function(){
+    mesIdx = parseInt(sel.value);
+    renderCart();
+    renderList(document.getElementById('busca').value);
+  });
+}
+
+function getVenda(p){ return p.v[mesIdx] || 0; }
+function getCusto(p){ return p.c[mesIdx] || 0; }
+
+function renderTabs(){
+  var el = document.getElementById('cat-tabs');
+  el.innerHTML = GRUPOS.map(function(g){
+    var count = cart.filter(function(c){ return c.p.grupo===g; }).length;
+    var badge = count > 0 ? '<span class="badge">'+count+'</span>' : '';
+    return '<button class="cat-tab'+(grupoAtual===g?' active':'')+'" data-g="'+g+'">'+g+badge+'</button>';
+  }).join('');
+  el.querySelectorAll('.cat-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      grupoAtual = btn.getAttribute('data-g');
+      document.getElementById('busca').value = '';
+      renderTabs();
+      renderList('');
+    });
+  });
+}
+
+function renderList(q){
+  var el = document.getElementById('prod-list');
+  var f = (q||'').toLowerCase();
+  var visible = PRODUTOS
+    .filter(function(p){ return p.grupo === grupoAtual; })
+    .filter(function(p){ return !cart.find(function(c){ return c.p.id===p.id; }); })
+    .filter(function(p){ return !f || p.name.toLowerCase().indexOf(f)>=0; })
+    .sort(function(a,b){ return a.name.localeCompare(b.name); });
+  if(!visible.length){
+    el.innerHTML='<div class="prod-empty">'+(!f?'Todos os produtos desta categoria ja adicionados':'Nenhum produto encontrado')+'</div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<visible.length;i++){
+    var p=visible[i];
+    html+='<div class="pi">'
+      +'<div class="pi-info">'
+      +'<div class="pi-name">'+p.name+'</div>'
+      +'<div class="pi-det">Lista: R$ '+fmtBRL(getVenda(p))+'</div>'
+      +'</div>'
+      +'<button class="pi-plus" data-pid="'+p.id+'" type="button">+</button>'
+      +'</div>';
+  }
+  el.innerHTML=html;
+  el.querySelectorAll('.pi-plus').forEach(function(btn){
+    var pid=btn.getAttribute('data-pid');
+    function doAdd(e){
+      e.preventDefault(); e.stopPropagation();
+      var prod=PRODUTOS.find(function(p){ return p.id===pid; });
+      if(prod) addItem(prod);
+    }
+    btn.addEventListener('touchend',doAdd,{passive:false});
+    btn.addEventListener('click',doAdd);
+  });
+}
+
+function addItem(p){
+  if(cart.find(function(c){ return c.p.id===p.id; })) return;
+  cart.push({p:p, qty:0, neg:0});
+  renderTabs();
+  renderList(document.getElementById('busca').value);
+  renderCart();
+  if(navigator.vibrate) navigator.vibrate(30);
+}
+
+function removeItem(id){
+  cart=cart.filter(function(c){ return c.p.id!==id; });
+  renderTabs();
+  renderList(document.getElementById('busca').value);
+  renderCart();
+}
+
+function setQty(id, val){
+  var item=cart.find(function(c){ return c.p.id===id; });
+  if(!item) return;
+  item.qty = parseFloat(val)||0;
+  updateItemDisplay(item);
+  renderSummary();
+}
+
+function setNeg(id, val){
+  var item=cart.find(function(c){ return c.p.id===id; });
+  if(!item) return;
+  item.neg = parseFloat(val)||0;
+  updateItemDisplay(item);
+  renderSummary();
+}
+
+function updateItemDisplay(item){
+  var tlEl=document.getElementById('tl-'+item.p.id);
+  var tnEl=document.getElementById('tn-'+item.p.id);
+  var mgEl=document.getElementById('mg-'+item.p.id);
+  if(!tlEl) return;
+  var totLista = item.qty * getVenda(item.p);
+  var totNeg   = item.qty * item.neg;
+  var totCusto = item.qty * getCusto(item.p);
+  tlEl.textContent = 'R$ '+fmtBRL(totLista);
+  tnEl.textContent = 'R$ '+fmtBRL(totNeg);
+  if(item.neg > 0 && item.qty > 0){
+    var mg = (totNeg - totCusto) / totNeg;
+    mgEl.textContent = fmtPct(mg);
+    mgEl.className = 'ic-foot-val '+(mg >= 0.15 ? 'verde' : 'laranja');
+  } else {
+    mgEl.textContent = '--';
+    mgEl.className = 'ic-foot-val';
+  }
+}
+
+function renderCart(){
+  var area=document.getElementById('cart-area');
+  if(!cart.length){
+    area.innerHTML='<div class="empty-state"><div class="empty-ico">&#128203;</div><div class="empty-txt">Adicione produtos</div><div class="empty-sub">Selecione a categoria e toque em +</div></div>';
+    renderSummary(); return;
+  }
+  var html='';
+  for(var i=0;i<cart.length;i++){
+    var item=cart[i];
+    var venda=getVenda(item.p);
+    var totLista=item.qty*venda;
+    var totNeg=item.qty*item.neg;
+    var totCusto=item.qty*getCusto(item.p);
+    var mgItem='--';
+    var mgClass='ic-foot-val';
+    if(item.neg>0 && item.qty>0){
+      var mg=(totNeg-totCusto)/totNeg;
+      mgItem=fmtPct(mg);
+      mgClass='ic-foot-val '+(mg>=0.15?'verde':'laranja');
+    }
+    html+='<div class="item-card">'
+      +'<div class="ic-head">'
+      +'<div class="ic-num">'+(i+1)+'</div>'
+      +'<div class="ic-name">'+item.p.name+'</div>'
+      +'<span class="ic-grupo">'+item.p.grupo+'</span>'
+      +'<button class="ic-del" data-delid="'+item.p.id+'">&#x2715;</button>'
+      +'</div>'
+      +'<div class="ic-body">'
+      +'<div class="ig"><label>Qtde</label>'
+      +'<input class="qty-inp" type="number" inputmode="decimal" min="0" value="'+(item.qty>0?item.qty:'')+'" data-qid="'+item.p.id+'" /></div>'
+      +'<div class="ig"><label>Preco Lista</label>'
+      +'<div class="preco-lista">R$ '+fmtBRL(venda)+'</div></div>'
+      +'<div class="ig"><label>Preco Neg.</label>'
+      +'<input class="neg-inp" type="number" inputmode="decimal" min="0" placeholder="0,00" value="'+(item.neg>0?item.neg:'')+'" data-nid="'+item.p.id+'" /></div>'
+      +'</div>'
+      +'<div class="ic-foot">'
+      +'<div class="ic-foot-item"><div class="ic-foot-lbl">Total Lista</div><div class="ic-foot-val" id="tl-'+item.p.id+'">R$ '+fmtBRL(totLista)+'</div></div>'
+      +'<div class="ic-foot-item"><div class="ic-foot-lbl">Total Neg.</div><div class="ic-foot-val" id="tn-'+item.p.id+'">R$ '+fmtBRL(totNeg)+'</div></div>'
+      +'<div class="ic-foot-item"><div class="ic-foot-lbl">Margem Item</div><div class="'+mgClass+'" id="mg-'+item.p.id+'">'+mgItem+'</div></div>'
+      +'</div></div>';
+  }
+  area.innerHTML=html;
+
+  area.querySelectorAll('[data-delid]').forEach(function(btn){
+    var did=btn.getAttribute('data-delid');
+    function doDel(e){ e.preventDefault(); removeItem(did); }
+    btn.addEventListener('touchend',doDel,{passive:false});
+    btn.addEventListener('click',doDel);
+  });
+  area.querySelectorAll('[data-qid]').forEach(function(inp){
+    inp.addEventListener('input',function(){ setQty(inp.getAttribute('data-qid'),inp.value); });
+  });
+  area.querySelectorAll('[data-nid]').forEach(function(inp){
+    inp.addEventListener('input',function(){ setNeg(inp.getAttribute('data-nid'),inp.value); });
+  });
+  renderSummary();
+}
+
+function renderSummary(){
+  var totLista=0, totNeg=0, totCusto=0;
+  for(var i=0;i<cart.length;i++){
+    var v=cart[i].qty*getVenda(cart[i].p);
+    var n=cart[i].qty*cart[i].neg;
+    var c=cart[i].qty*getCusto(cart[i].p);
+    totLista+=v; totNeg+=n; totCusto+=c;
+  }
+  document.getElementById('tot-lista').textContent='R$ '+fmtBRL(totLista);
+  document.getElementById('tot-neg').textContent='R$ '+fmtBRL(totNeg);
+  var mBox=document.getElementById('margem-box');
+  var mVal=document.getElementById('margem-val');
+  if(totNeg>0 && totCusto>0){
+    var margem=(totNeg-totCusto)/totNeg;
+    mVal.textContent=fmtPct(margem);
+    mBox.className='b-margem'+(margem<0.10?' warn':'');
+  } else {
+    mVal.textContent='--%';
+    mBox.className='b-margem';
+  }
+}
+
+function compartilhar(){
+  if(!cart.length){ toast('Adicione produtos primeiro'); return; }
+  var cli=document.getElementById('cliente').value||'Cliente';
+  var mes=DATAS[mesIdx];
+  var totLista=0,totNeg=0,totCusto=0,linhas=[];
+  for(var i=0;i<cart.length;i++){
+    var item=cart[i];
+    var vl=item.qty*getVenda(item.p);
+    var vn=item.qty*item.neg;
+    var vc=item.qty*getCusto(item.p);
+    totLista+=vl; totNeg+=vn; totCusto+=vc;
+    var mgStr=vn>0?fmtPct((vn-vc)/vn):'--';
+    linhas.push((i+1)+'. '+item.p.name+'\n   Qtde: '+item.qty+' | Lista: R$ '+fmtBRL(getVenda(item.p))+' | Neg: R$ '+fmtBRL(item.neg)+' | Margem: '+mgStr);
+  }
+  var margem=totNeg>0?(totNeg-totCusto)/totNeg:0;
+  var txt='Negociacao - '+mes+'\nCliente: '+cli+'\n\n'+linhas.join('\n')+'\n\nTotal Lista: R$ '+fmtBRL(totLista)+'\nTotal Negociado: R$ '+fmtBRL(totNeg)+'\nMargem Media: '+fmtPct(margem);
+  if(navigator.share){ navigator.share({title:'Negociacao',text:txt}).catch(function(){ copiar(txt); }); }
+  else copiar(txt);
+}
+
+function copiar(txt){
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ toast('Copiado!'); }).catch(function(){ toast('Indisponivel'); });
+  else toast('Indisponivel');
+}
+
+function salvar(){
+  if(!cart.length){ toast('Adicione produtos primeiro'); return; }
+  var cli=document.getElementById('cliente').value||'Cliente';
+  var mes=DATAS[mesIdx];
+  var totLista=0,totNeg=0,totCusto=0,items=[];
+  for(var i=0;i<cart.length;i++){
+    var item=cart[i];
+    var vl=item.qty*getVenda(item.p);
+    var vn=item.qty*item.neg;
+    var vc=item.qty*getCusto(item.p);
+    totLista+=vl; totNeg+=vn; totCusto+=vc;
+    items.push({nome:item.p.name,grupo:item.p.grupo,qty:item.qty,precoLista:getVenda(item.p),precoNeg:item.neg,totLista:vl,totNeg:vn});
+  }
+  var margem=totNeg>0?(totNeg-totCusto)/totNeg:0;
+  try{
+    var h=JSON.parse(localStorage.getItem('neg_hist')||'[]');
+    h.unshift({cliente:cli,mes:mes,items:items,totLista:totLista,totNeg:totNeg,margem:margem,dt:new Date().toISOString()});
+    localStorage.setItem('neg_hist',JSON.stringify(h.slice(0,30)));
+    toast('Salvo!');
+    if(navigator.vibrate) navigator.vibrate([30,20,30]);
+  }catch(e){ toast('Erro ao salvar'); }
+}
+
+function abrirHist(){
+  document.getElementById('hist-overlay').classList.remove('hidden');
+  document.getElementById('hist-drawer').classList.remove('hidden');
+  var h=[];
+  try{ h=JSON.parse(localStorage.getItem('neg_hist')||'[]'); }catch(e){}
+  var el=document.getElementById('hist-list');
+  if(!h.length){ el.innerHTML='<div class="hist-empty">Nenhum pedido salvo</div>'; return; }
+  var html='';
+  for(var i=0;i<h.length;i++){
+    var s=h[i]; var d=new Date(s.dt);
+    var ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    html+='<div class="hist-item"><div class="hist-cli">'+(s.cliente||'Cliente')+' <span style="font-size:11px;color:#888">'+s.mes+'</span></div>'
+      +'<div class="hist-row"><span class="hist-date">'+ds+'</span><span class="hist-val">R$ '+fmtBRL(s.totNeg||0)+'</span></div>'
+      +'<div class="hist-det">'+(s.items||[]).length+' produto(s) | Margem: '+fmtPct(s.margem||0)+'</div></div>';
+  }
+  el.innerHTML=html;
+}
+
+function fecharHist(){
+  document.getElementById('hist-overlay').classList.add('hidden');
+  document.getElementById('hist-drawer').classList.add('hidden');
+}
+
+var toastT;
+function toast(msg){
+  var el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){ el.classList.remove('show'); },2500);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  setupMes();
+  renderTabs();
+  renderList('');
+  renderCart();
+  document.getElementById('busca').addEventListener('input',function(e){ renderList(e.target.value); });
+  document.getElementById('btn-hist').addEventListener('click',abrirHist);
+  document.getElementById('btn-close-hist').addEventListener('click',fecharHist);
+  document.getElementById('hist-overlay').addEventListener('click',fecharHist);
+  document.getElementById('btn-share').addEventListener('click',compartilhar);
+  document.getElementById('btn-save').addEventListener('click',salvar);
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
+  });
+}
+</script>
+</body>
+</html>

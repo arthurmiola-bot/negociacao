@@ -1,0 +1,15 @@
+{
+  "name": "Negociação",
+  "short_name": "Negociação",
+  "description": "Simulador de negociação de pedidos",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a3a5c",
+  "theme_color": "#1e4d8c",
+  "lang": "pt-BR",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
