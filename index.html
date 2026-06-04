@@ -775,8 +775,10 @@ function showApp(){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('hdr-user').textContent = (currentUserData && currentUserData.nome) ? currentUserData.nome : currentUser.email;
   var badge = document.getElementById('role-badge');
-  var perfil = (currentUserData && currentUserData.perfil) ? currentUserData.perfil : 'vendedor';
-  badge.textContent = perfil === 'gerente' ? 'GERENTE' : 'VENDEDOR';
+  var perfil = 'vendedor';
+  if(currentUserData){ var p = (currentUserData.perfil||'').toString().toLowerCase().trim(); if(p) perfil=p; }
+  console.log('DEBUG perfil=['+perfil+'] data='+JSON.stringify(currentUserData));
+  badge.textContent = perfil==='gerente'?'GERENTE':perfil==='diretor'?'DIRETOR':'VENDEDOR';
   badge.className = 'role-badge ' + perfil;
   // Show/hide tabs based on perfil
   document.getElementById('tab-gerente').classList.toggle('hidden', perfil!=='gerente' && perfil!=='diretor');
