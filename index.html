@@ -148,6 +148,7 @@
     /* ── GERENTE MODULE ── */
     #mod-gerente{flex:1;display:flex;flex-direction:column;overflow:hidden}
     #mod-diretor{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .dir-scroll{flex:1;overflow-y:auto;padding:10px 12px;padding-bottom:calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
     .ger-scroll{flex:1;overflow-y:auto;padding:10px 12px;padding-bottom:calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
     .ger-header{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .ger-filter{flex:1;min-width:120px;border:1.5px solid var(--bdr);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
@@ -368,7 +369,7 @@
 
 <!-- DIRETOR MODULE -->
   <div id="mod-diretor" class="hidden">
-    <div class="ger-scroll">
+    <div class="dir-scroll">
 
       <div class="ger-config">
         <span class="lbl">Taxas financeiras</span>
