@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Negociacao"/>
   <title>Negociacao</title>
   <link rel="manifest" href="manifest.json"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -271,6 +272,7 @@
   <div class="mod-tabs" id="mod-tabs-bar">
     <button class="mod-tab active" data-mod="vendedor">&#128203; Cotacao</button>
     <button class="mod-tab" data-mod="gerente" id="tab-gerente">&#128202; Gerente</button>
+    <button class="mod-tab" data-mod="diretor" id="tab-diretor">&#9881; Diretor</button>
   </div>
 
   <!-- VENDEDOR -->
@@ -363,7 +365,78 @@
   </div>
 </div>
 
-<!-- DRAWER HISTORICO -->
+<!-- DIRETOR MODULE -->
+  <div id="mod-diretor" class="hidden">
+    <div class="ger-scroll">
+
+      <div class="ger-config">
+        <span class="lbl">Taxas financeiras</span>
+        <div class="ger-config-row">
+          <label>Taxa de juros (% a.m.)</label>
+          <input type="number" id="taxa-juros-inp" value="1.5" min="0" step="0.01"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <label>Taxa de antecipacao (% a.m.)</label>
+          <input type="number" id="taxa-ant-inp" value="1.0" min="0" step="0.01"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin:8px 0 4px">Margem por grupo (%)</div>
+        <div class="ger-config-row">
+          <label>Syngenta</label>
+          <input type="number" id="mg-Syngenta" value="25" min="0" max="100" step="0.5"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <label>Especialidade</label>
+          <input type="number" id="mg-Especialidade" value="30" min="0" max="100" step="0.5"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <label>Pos Patente</label>
+          <input type="number" id="mg-Pos Patente" value="28" min="0" max="100" step="0.5"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <label>Semente</label>
+          <input type="number" id="mg-Semente" value="20" min="0" max="100" step="0.5"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <label>TSI</label>
+          <input type="number" id="mg-TSI" value="25" min="0" max="100" step="0.5"/>
+          <span style="font-size:13px;color:var(--text3)">%</span>
+        </div>
+        <div class="ger-config-row">
+          <button class="btn-config-save" id="btn-salvar-taxas">Salvar taxas</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px">
+        <span class="lbl">Importar base de custos (Excel)</span>
+        <div class="s" style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">
+          Planilha com 4 colunas: <strong>Grupo | Produto | Custo | Mes</strong><br>
+          Exemplo: Syngenta | ELATUS 4X5 KG | 380,00 | ago/26
+        </div>
+        <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none"/>
+        <button class="btn-save" id="btn-excel-pick" style="margin-bottom:8px">
+          &#128196; Selecionar arquivo Excel
+        </button>
+        <div id="excel-preview" style="font-size:13px;color:var(--text3)"></div>
+        <button class="btn-save" id="btn-excel-send" style="display:none;margin-top:8px">
+          &#9650; Enviar para o Firebase
+        </button>
+      </div>
+
+      <div class="card">
+        <span class="lbl">Base de custos atual</span>
+        <div id="dir-custos-list" style="font-size:13px;color:var(--text3)">Carregando...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DRAWER HISTORICO -->
 <div id="hist-overlay" class="overlay hidden"></div>
 <div id="hist-drawer" class="drawer hidden">
   <div class="drawer-handle"></div>
@@ -382,7 +455,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, getDoc, getDocs,
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDoc, getDocs,
          query, where, orderBy, serverTimestamp, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -636,7 +709,14 @@ var editingCotId = null;
 function fmtBRL(n){ return (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(n){ return (n*100).toFixed(1)+'%'; }
 function getVenda(p){ return p.v[mesIdx]||0; }
-function getCusto(p){ return p.c[mesIdx]||0; }
+function getCusto(p){
+  var bc = baseCustos.find(function(b){ return b.id===p.id; });
+  if(bc){
+    var mesVenda = DATAS[mesIdx];
+    return correctCusto(bc.custo, bc.mesRef, mesVenda);
+  }
+  return p.c[mesIdx]||0;
+}
 
 var toastT;
 function toast(msg){
@@ -693,10 +773,9 @@ function showApp(){
   var perfil = currentUserData?.perfil || 'vendedor';
   badge.textContent = perfil === 'gerente' ? 'GERENTE' : 'VENDEDOR';
   badge.className = 'role-badge ' + perfil;
-  // Show/hide gerente tab
-  if(perfil !== 'gerente'){
-    document.getElementById('tab-gerente').classList.add('hidden');
-  }
+  // Show/hide tabs based on perfil
+  document.getElementById('tab-gerente').classList.toggle('hidden', perfil!=='gerente' && perfil!=='diretor');
+  document.getElementById('tab-diretor').classList.toggle('hidden', perfil!=='diretor');
   setupMes();
   renderTabs();
   renderList('');
@@ -911,7 +990,9 @@ function renderSummary(){
   var mBox=document.getElementById('margem-box');
   var mVal=document.getElementById('margem-val');
   var warnMsg=document.getElementById('margem-warn-msg');
-  if(totNeg>0 && cart.length>0){
+  // Conta produtos com volume E preco negociado preenchidos
+  var prodCompletos = cart.filter(function(item){ return item.qty>0 && item.neg>0; }).length;
+  if(totNeg>0 && prodCompletos>=3){
     var mg=(totNeg-totCusto)/totNeg*100;
     mVal.textContent=mg.toFixed(1)+'%';
     if(mg>=margemMin){ mBox.className='b-margem'; warnMsg.classList.remove('show'); }
@@ -978,17 +1059,14 @@ document.getElementById('btn-share').addEventListener('click', function(){
   if(!cart.length){ toast('Adicione produtos primeiro'); return; }
   var cli=document.getElementById('cliente').value||'Cliente';
   var mes=DATAS[mesIdx];
-  var totLista=0,totNeg=0,linhas=[];
+  var totNeg=0,linhas=[];
   cart.forEach(function(item,i){
-    var vl=item.qty*getVenda(item.p); var vn=item.qty*item.neg;
-    totLista+=vl; totNeg+=vn;
-    linhas.push((i+1)+'. '+item.p.name+'\n   Qtde: '+item.qty
-      +' | Lista: R$ '+fmtBRL(getVenda(item.p))
-      +' | Neg: R$ '+fmtBRL(item.neg));
+    var vn=item.qty*item.neg;
+    totNeg+=vn;
+    linhas.push((i+1)+'. '+item.p.name+'\\n   Volume: '+item.qty+' | Preco: R$ '+fmtBRL(item.neg)+' | Total: R$ '+fmtBRL(vn));
   });
-  var txt='Cotacao - '+mes+'\nCliente: '+cli+'\n\n'
-    +linhas.join('\n')+'\n\nTotal Lista: R$ '+fmtBRL(totLista)
-    +'\nTotal Negociado: R$ '+fmtBRL(totNeg);
+  var txt='Cotacao\\nCliente: '+cli+'\\n\\n'
+    +linhas.join('\\n')+'\\n\\nTotal: R$ '+fmtBRL(totNeg);
   if(navigator.share){ navigator.share({title:'Cotacao',text:txt}).catch(function(){ copiar(txt); }); }
   else copiar(txt);
 });
@@ -1092,7 +1170,9 @@ document.querySelectorAll('.mod-tab').forEach(function(tab){
     tab.classList.add('active');
     document.getElementById('mod-vendedor').classList.toggle('hidden', mod!=='vendedor');
     document.getElementById('mod-gerente').classList.toggle('hidden', mod!=='gerente');
+    document.getElementById('mod-diretor').classList.toggle('hidden', mod!=='diretor');
     if(mod==='gerente') loadGerente();
+    if(mod==='diretor') loadDiretor();
   });
 });
 
@@ -1195,6 +1275,233 @@ async function loadGerente(){
 
 document.getElementById('ger-filter-vendedor').addEventListener('change', loadGerente);
 document.getElementById('ger-filter-status').addEventListener('change', loadGerente);
+
+// ===================== DIRECTOR MODULE =====================
+var taxaJuros = 1.5;    // % a.m.
+var taxaAnt   = 1.0;    // % a.m.
+var margemPorGrupo = {
+  'Syngenta':25, 'Especialidade':30, 'Pos Patente':28, 'Semente':20, 'TSI':25
+};
+function getMargemGrupo(grupo){ return margemPorGrupo[grupo] || 25; }
+var baseCustos = [];    // [{grupo, produto, custo, mesRef, mesIdx}]
+var excelData  = [];    // parsed from uploaded file
+
+// DATAS helper: convert "ago/26" style to index relative to DATAS array
+var MONTH_MAP = {
+  'jan':0,'feb':1,'fev':1,'mar':2,'apr':3,'abr':3,'may':4,'mai':4,
+  'jun':5,'jul':6,'aug':7,'ago':7,'sep':8,'set':8,'oct':9,'out':9,
+  'nov':10,'dec':11,'dez':11
+};
+function parseMesLabel(label) {
+  // "ago/26" -> {month:7, year:2026}
+  if(!label) return null;
+  var parts = String(label).toLowerCase().split('/');
+  if(parts.length < 2) return null;
+  var m = MONTH_MAP[parts[0].substring(0,3)];
+  var y = parseInt(parts[1]);
+  if(y < 100) y += 2000;
+  return {month: m, year: y};
+}
+function monthDiff(from, to) {
+  // positive = to is later than from
+  return (to.year - from.year)*12 + (to.month - from.month);
+}
+function correctCusto(custo, mesRef, mesVendaLabel) {
+  var ref  = parseMesLabel(mesRef);
+  var vend = parseMesLabel(mesVendaLabel);
+  if(!ref || !vend) return custo;
+  var diff = monthDiff(ref, vend);
+  if(diff > 0) {
+    // venda depois do custo -> juros
+    return custo * Math.pow(1 + taxaJuros/100, diff);
+  } else if(diff < 0) {
+    // venda antes do custo -> antecipacao
+    return custo / Math.pow(1 + taxaAnt/100, Math.abs(diff));
+  }
+  return custo;
+}
+function custoCorrigidoParaMes(prodId) {
+  var bc = baseCustos.find(function(b){ return b.id === prodId; });
+  if(!bc) return null;
+  var mesVenda = DATAS[mesIdx];
+  return correctCusto(bc.custo, bc.mesRef, mesVenda);
+}
+
+var GRUPOS_MG = ['Syngenta','Especialidade','Pos Patente','Semente','TSI'];
+async function loadDirConfig() {
+  if(!FIREBASE_CONFIGURED) return;
+  try {
+    var snap = await getDoc(doc(db,'config','taxas'));
+    if(snap.exists()){
+      var d = snap.data();
+      taxaJuros = d.taxaJuros || 1.5;
+      taxaAnt   = d.taxaAnt   || 1.0;
+      if(d.margemPorGrupo) margemPorGrupo = Object.assign(margemPorGrupo, d.margemPorGrupo);
+      document.getElementById('taxa-juros-inp').value = taxaJuros;
+      document.getElementById('taxa-ant-inp').value   = taxaAnt;
+      GRUPOS_MG.forEach(function(g){
+        var el = document.getElementById('mg-'+g);
+        if(el) el.value = margemPorGrupo[g] || 25;
+      });
+    }
+  } catch(e){}
+}
+
+async function loadBaseCustos() {
+  if(!FIREBASE_CONFIGURED) return;
+  try {
+    var snap = await getDocs(collection(db,'custos'));
+    baseCustos = [];
+    snap.forEach(function(d){
+      baseCustos.push({id: d.id, ...d.data()});
+    });
+    renderBaseCustos();
+  } catch(e){ console.warn('loadBaseCustos:', e); }
+}
+
+function renderBaseCustos() {
+  var el = document.getElementById('dir-custos-list');
+  if(!baseCustos.length){
+    el.innerHTML = 'Nenhum custo cadastrado ainda.';
+    return;
+  }
+  var grupos = {};
+  baseCustos.forEach(function(b){
+    if(!grupos[b.grupo]) grupos[b.grupo]=[];
+    grupos[b.grupo].push(b);
+  });
+  var html = '';
+  Object.keys(grupos).sort().forEach(function(g){
+    html += '<div style="margin-bottom:8px"><strong style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--az-btn)">'+g+'</strong>';
+    grupos[g].sort(function(a,b){ return a.produto.localeCompare(b.produto); }).forEach(function(b){
+      var mesVenda = DATAS[mesIdx];
+      var corr = correctCusto(b.custo, b.mesRef, mesVenda);
+      var mg = getMargemGrupo(b.grupo);
+      var lista = corr / (1 - mg/100);
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px">'
+        +'<span style="flex:1;font-weight:600">'+b.produto+'</span>'
+        +'<span style="color:var(--text3);font-size:11px">Custo: R$ '+fmtBRL(b.custo)+' ('+b.mesRef+')'
+        +' &rarr; Corrig: R$ '+fmtBRL(corr)+' | Mg: '+mg+'% | Lista: R$ '+fmtBRL(lista)+'</span>'
+        +'<button class="btn-del-custo" data-bid="'+b.id+'" style="background:none;border:1.5px solid #f5a0a0;border-radius:7px;color:#c0392b;font-size:13px;padding:3px 8px;cursor:pointer;flex-shrink:0">&#x2715;</button>'
+        +'</div>';
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('.btn-del-custo').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var bid = btn.getAttribute('data-bid');
+      var item = baseCustos.find(function(b){ return b.id===bid; });
+      var nome = item ? item.produto : bid;
+      if(!confirm('Remover "'+nome+'" da base de custos?')) return;
+      deletarCusto(bid);
+    });
+  });
+
+}
+document.getElementById('btn-salvar-taxas').addEventListener('click', async function(){
+  taxaJuros = parseFloat(document.getElementById('taxa-juros-inp').value) || 1.5;
+  taxaAnt   = parseFloat(document.getElementById('taxa-ant-inp').value)   || 1.0;
+  GRUPOS_MG.forEach(function(g){
+    var el = document.getElementById('mg-'+g);
+    if(el) margemPorGrupo[g] = parseFloat(el.value) || 25;
+  });
+  if(FIREBASE_CONFIGURED){
+    try {
+      await setDoc(doc(db,'config','taxas'), {taxaJuros:taxaJuros, taxaAnt:taxaAnt, margemPorGrupo:margemPorGrupo});
+      toast('Configuracoes salvas!');
+    } catch(e){ toast('Erro: '+e.message); }
+  } else {
+    toast('Configuracoes salvas localmente');
+  }
+  renderBaseCustos();
+});
+
+// Excel upload
+document.getElementById('btn-excel-pick').addEventListener('click', function(){
+  document.getElementById('excel-upload').click();
+});
+
+document.getElementById('excel-upload').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if(!file){ return; }
+  var preview = document.getElementById('excel-preview');
+  preview.innerHTML = 'Lendo arquivo...';
+
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try {
+      // Use SheetJS from CDN
+      var wb = XLSX.read(ev.target.result, {type:'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      // Skip header row, expect: Grupo | Produto | Custo | Mes
+      excelData = [];
+      var erros = 0;
+      for(var i=1; i<rows.length; i++){
+        var row = rows[i];
+        var grupo   = String(row[0]||'').trim();
+        var produto = String(row[1]||'').trim();
+        var custo   = parseFloat(String(row[2]||'').replace(',','.'));
+        var mes     = String(row[3]||'').trim();
+        if(!grupo || !produto || isNaN(custo) || !mes){ erros++; continue; }
+        // Build ID matching PRODUTOS array
+        var prod = PRODUTOS.find(function(p){ return p.name.toLowerCase()===produto.toLowerCase(); });
+        var pid = prod ? prod.id : (grupo.substring(0,2)+produto.substring(0,8)).toLowerCase().replace(/\s/g,'');
+        excelData.push({id:pid, grupo:grupo, produto:produto, custo:custo, mesRef:mes});
+      }
+      preview.innerHTML = '<strong style="color:var(--vd)">'+excelData.length+' produtos lidos</strong>'
+        +(erros?' <span style="color:var(--vm)">('+erros+' linhas ignoradas)</span>':'')
+        +'<br><small style="color:var(--text3)">Verifique e clique em Enviar para o Firebase</small>';
+      document.getElementById('btn-excel-send').style.display = 'flex';
+    } catch(err){
+      preview.innerHTML = '<span style="color:var(--vr)">Erro ao ler arquivo: '+err.message+'</span>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('btn-excel-send').addEventListener('click', async function(){
+  if(!excelData.length){ toast('Nenhum dado para enviar'); return; }
+  if(!FIREBASE_CONFIGURED){ toast('Configure o Firebase primeiro'); return; }
+  try {
+    var btn = document.getElementById('btn-excel-send');
+    btn.textContent = 'Enviando...';
+    // Use batch-like sequential writes
+    for(var i=0; i<excelData.length; i++){
+      var item = excelData[i];
+      await setDoc(doc(db,'custos',item.id), {
+        grupo:item.grupo, produto:item.produto,
+        custo:item.custo, mesRef:item.mesRef
+      });
+    }
+    toast(excelData.length+' custos salvos no Firebase!');
+    btn.style.display = 'none';
+    document.getElementById('excel-preview').innerHTML = '';
+    document.getElementById('excel-upload').value = '';
+    excelData = [];
+    await loadBaseCustos();
+  } catch(e){ toast('Erro: '+e.message); }
+});
+
+async function deletarCusto(bid){
+  try {
+    if(FIREBASE_CONFIGURED){
+      await deleteDoc(doc(db,'custos',bid));
+    }
+    baseCustos = baseCustos.filter(function(b){ return b.id!==bid; });
+    renderBaseCustos();
+    toast('Produto removido!');
+  } catch(e){ toast('Erro ao remover: '+e.message); }
+}
+
+async function loadDiretor(){
+  await loadDirConfig();
+  await loadBaseCustos();
+}
+
+// getCusto already includes Firebase custos override above
 </script>
 </body>
 </html>
