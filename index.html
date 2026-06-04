@@ -1531,6 +1531,17 @@ async function loadDiretor(){
 }
 
 // getCusto already includes Firebase custos override above
+// Limpa service worker e cache antigos automaticamente
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
+  });
+  if('caches' in window){
+    caches.keys().then(function(keys){
+      keys.forEach(function(k){ caches.delete(k); });
+    });
+  }
+}
 </script>
 </body>
 </html>
