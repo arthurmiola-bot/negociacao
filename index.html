@@ -773,9 +773,9 @@ function showLogin(){
 function showApp(){
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('hdr-user').textContent = currentUserData?.nome || currentUser.email;
+  document.getElementById('hdr-user').textContent = (currentUserData && currentUserData.nome) ? currentUserData.nome : currentUser.email;
   var badge = document.getElementById('role-badge');
-  var perfil = currentUserData?.perfil || 'vendedor';
+  var perfil = (currentUserData && currentUserData.perfil) ? currentUserData.perfil : 'vendedor';
   badge.textContent = perfil === 'gerente' ? 'GERENTE' : 'VENDEDOR';
   badge.className = 'role-badge ' + perfil;
   // Show/hide tabs based on perfil
@@ -1502,13 +1502,27 @@ async function deletarCusto(bid){
 }
 
 async function loadDiretor(){
-  // Force render first so content is visible
-  document.getElementById('dir-custos-list').innerHTML = 'Carregando...';
-  try { await loadDirConfig(); } catch(e){ console.warn('loadDirConfig:', e); }
-  try { await loadBaseCustos(); } catch(e){
-    console.warn('loadBaseCustos:', e);
-    document.getElementById('dir-custos-list').innerHTML = 'Nenhum custo cadastrado ainda.';
+  var listEl = document.getElementById('dir-custos-list');
+  var mInp = document.getElementById('taxa-juros-inp');
+  if(mInp) mInp.value = taxaJuros;
+  var aInp = document.getElementById('taxa-ant-inp');
+  if(aInp) aInp.value = taxaAnt;
+  if(listEl) listEl.innerHTML = 'Carregando...';
+  // Load config
+  try { await loadDirConfig(); } catch(e){ console.warn('loadDirConfig erro:', e); }
+  // Load custos
+  try {
+    await loadBaseCustos();
+  } catch(e){
+    console.warn('loadBaseCustos erro:', e);
+    if(listEl) listEl.innerHTML = 'Nenhum custo cadastrado. Use o botao acima para importar.';
   }
+  // Update margem inputs from loaded config
+  var GRUPOS_MG2 = ['Syngenta','Especialidade','Pos Patente','Semente','TSI'];
+  GRUPOS_MG2.forEach(function(g){
+    var el = document.getElementById('mg-'+g);
+    if(el) el.value = margemPorGrupo[g] || 25;
+  });
 }
 
 // getCusto already includes Firebase custos override above
