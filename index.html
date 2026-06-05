@@ -220,6 +220,30 @@
     .hist-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;display:inline-block;margin-top:4px}
     .hist-empty{text-align:center;padding:40px;color:var(--text3);font-size:14px}
 
+    /* OBSERVACAO */
+    .obs-field{width:100%;border:1.5px solid var(--bdr);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);background:#fff;outline:none;resize:none;font-family:var(--font)}
+    .obs-field:focus{border-color:var(--az)}
+    /* CUSTO ALTERADO */
+    .custo-alterado{background:var(--vm-lt);border:1.5px solid var(--vm-bd);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:700;color:var(--vm)}
+    .custo-hist{font-size:10px;color:var(--vm);margin-top:2px;font-style:italic}
+    /* GERENTE FILTROS */
+    .ger-mes-filter{flex:1;min-width:100px;border:1.5px solid var(--bdr);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
+    /* PAINEL RESUMO */
+    .resumo-painel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .resumo-card{background:#fff;border:1.5px solid var(--bdr);border-radius:12px;padding:10px 12px}
+    .resumo-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+    .resumo-val{font-size:18px;font-weight:700;color:var(--text)}
+    .resumo-val.verde{color:var(--vd)}
+    .resumo-val.azul{color:var(--az-btn)}
+    .resumo-val.warn{color:var(--vm)}
+    .resumo-sub{font-size:11px;color:var(--text3);margin-top:1px}
+    /* STATUS BADGE GERENTE */
+    .status-btn{font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;border:1.5px solid;cursor:pointer;background:#fff}
+    .status-btn.rascunho{border-color:#bbb;color:#555}
+    .status-btn.enviada{border-color:var(--az-bd);color:var(--az-btn)}
+    .status-btn.aprovada{border-color:var(--vd-bd);color:var(--vd)}
+    .status-btn.perdida{border-color:var(--vr-bd);color:var(--vr)}
+    .status-btn:hover{opacity:.8}
     /* TOAST */
     .toast{position:fixed;bottom:240px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 18px;border-radius:100px;font-size:13px;font-weight:600;z-index:50;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
     .toast.show{opacity:1}
@@ -282,7 +306,7 @@
 
   <div id="modules-wrapper" style="flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column">
   <!-- VENDEDOR -->
-  <div id="mod-vendedor" style="position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-vendedor" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="mes-bar">
       <label>MES</label>
       <select class="mes-select" id="mes-select"></select>
@@ -300,6 +324,10 @@
           <option value="aprovada">Aprovada</option>
           <option value="perdida">Perdida</option>
         </select>
+      </div>
+      <div class="card">
+        <span class="lbl">Observacao</span>
+        <textarea class="obs-field" id="obs-field" rows="2" placeholder="Ex: cliente tem proposta concorrente, pedido vinculado a safra..."></textarea>
       </div>
       <div class="card">
         <span class="lbl">Produtos</span>
@@ -344,7 +372,7 @@
   </div>
 
   <!-- GERENTE -->
-  <div id="mod-gerente" class="hidden" style="position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-gerente" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="ger-scroll">
       <div class="ger-config">
         <span class="lbl">Configuracao</span>
@@ -354,6 +382,7 @@
           <button class="btn-config-save" id="btn-salvar-config">Salvar</button>
         </div>
       </div>
+      <div id="resumo-painel" class="resumo-painel"></div>
       <div class="ger-header">
         <select class="ger-filter" id="ger-filter-vendedor">
           <option value="">Todos os vendedores</option>
@@ -365,6 +394,9 @@
           <option value="aprovada">Aprovada</option>
           <option value="perdida">Perdida</option>
         </select>
+        <select class="ger-mes-filter" id="ger-filter-mes">
+          <option value="">Todos os meses</option>
+        </select>
       </div>
       <div id="ger-list"></div>
     </div>
@@ -372,7 +404,7 @@
 </div>
 
 <!-- DIRETOR MODULE -->
-  <div id="mod-diretor" class="hidden" style="position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-diretor" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="dir-scroll">
 
       <div class="ger-config">
@@ -1018,6 +1050,7 @@ document.getElementById('btn-save').addEventListener('click', async function(){
   if(!cart.length){ toast('Adicione produtos primeiro'); return; }
   var cli=document.getElementById('cliente').value||'Cliente';
   var status=document.getElementById('status-sel').value||'rascunho';
+  var obs=document.getElementById('obs-field').value||'';
   var mes=DATAS[mesIdx];
   var totLista=0,totNeg=0,totCusto=0;
   var items=cart.map(function(item){
@@ -1031,7 +1064,7 @@ document.getElementById('btn-save').addEventListener('click', async function(){
   var data={
     uid:currentUser.uid,
     vendedor:currentUserData?.nome||currentUser.email,
-    cliente:cli, status:status, mes:mes,
+    cliente:cli, status:status, mes:mes, obs:obs,
     items:items, totLista:totLista, totNeg:totNeg, totCusto:totCusto, margem:margem,
     updatedAt:serverTimestamp()
   };
@@ -1154,6 +1187,7 @@ async function loadCotacao(cid){
     }
     editingCotId=cid;
     document.getElementById('cliente').value=s.cliente||'';
+    document.getElementById('obs-field').value=s.obs||'';
     // Set mes
     var mi=DATAS.indexOf(s.mes); if(mi>=0){ mesIdx=mi; document.getElementById('mes-select').value=mi; }
     // Set status
@@ -1191,55 +1225,105 @@ async function loadGerente(){
   var listEl=document.getElementById('ger-list');
   var fVend=document.getElementById('ger-filter-vendedor').value;
   var fStat=document.getElementById('ger-filter-status').value;
+  var fMes=document.getElementById('ger-filter-mes').value;
   listEl.innerHTML='<div class="ger-empty">Carregando...</div>';
   try {
     var q=query(collection(db,'cotacoes'), orderBy('updatedAt','desc'));
     var snap=await getDocs(q);
     if(snap.empty){ listEl.innerHTML='<div class="ger-empty">Nenhuma cotacao encontrada</div>'; return; }
-    var docs=[]; var vendedores=new Set();
-    snap.forEach(function(d){ var s={id:d.id,...d.data()}; docs.push(s); vendedores.add(s.vendedor||s.uid); });
-    // Populate vendedor filter
+    var docs=[]; var vendedores=new Set(); var meses=new Set();
+    snap.forEach(function(d){ var s={id:d.id,...d.data()}; docs.push(s); vendedores.add(s.vendedor||s.uid); if(s.mes) meses.add(s.mes); });
+
+    // Populate filters
     var fv=document.getElementById('ger-filter-vendedor');
     var curV=fv.value;
-    fv.innerHTML='<option value="">Todos os vendedores</option>'
-      +[...vendedores].map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
+    fv.innerHTML='<option value="">Todos os vendedores</option>'+[...vendedores].map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
     fv.value=curV;
-    // Filter
+
+    var fm=document.getElementById('ger-filter-mes');
+    var curM=fm.value;
+    fm.innerHTML='<option value="">Todos os meses</option>'+DATAS.filter(function(d){ return meses.has(d); }).map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
+    fm.value=curM;
+
+    // Apply filters
     if(fVend) docs=docs.filter(function(d){ return (d.vendedor||d.uid)===fVend; });
     if(fStat) docs=docs.filter(function(d){ return d.status===fStat; });
+    if(fMes)  docs=docs.filter(function(d){ return d.mes===fMes; });
+
+    // Resumo painel
+    var totNegTotal=0, totCustoTotal=0, countAbaixo=0;
+    var statusCount={rascunho:0,enviada:0,aprovada:0,perdida:0};
+    docs.forEach(function(s){
+      totNegTotal+=s.totNeg||0; totCustoTotal+=s.totCusto||0;
+      var st=s.status||'rascunho'; if(statusCount[st]!==undefined) statusCount[st]++;
+      var mg=(s.totNeg>0)?(s.totNeg-s.totCusto)/s.totNeg:0;
+      if(mg<margemMin/100 && s.totNeg>0) countAbaixo++;
+    });
+    var mgMedia=totNegTotal>0?(totNegTotal-totCustoTotal)/totNegTotal*100:0;
+    var mgCls=mgMedia>=margemMin?'verde':mgMedia>=0?'warn':'danger';
+    document.getElementById('resumo-painel').innerHTML=
+      '<div class="resumo-card"><div class="resumo-lbl">Cotacoes</div><div class="resumo-val azul">'+docs.length+'</div>'
+      +'<div class="resumo-sub">'+statusCount.aprovada+' aprovadas &middot; '+statusCount.enviada+' enviadas</div></div>'
+      +'<div class="resumo-card"><div class="resumo-lbl">Total Negociado</div><div class="resumo-val azul">R$ '+fmtBRL(totNegTotal)+'</div>'
+      +'<div class="resumo-sub">'+statusCount.rascunho+' rascunhos &middot; '+statusCount.perdida+' perdidas</div></div>'
+      +'<div class="resumo-card"><div class="resumo-lbl">Margem Media</div><div class="resumo-val '+mgCls+'">'+mgMedia.toFixed(1)+'%</div>'
+      +'<div class="resumo-sub">Min: '+margemMin+'%</div></div>'
+      +'<div class="resumo-card"><div class="resumo-lbl">Abaixo da margem</div><div class="resumo-val '+(countAbaixo>0?'warn':'verde')+'">'+countAbaixo+'</div>'
+      +'<div class="resumo-sub">cotacao(oes)</div></div>';
+
     if(!docs.length){ listEl.innerHTML='<div class="ger-empty">Nenhuma cotacao encontrada</div>'; return; }
+
     var html='';
     docs.forEach(function(s){
       var mg=(s.margem||0)*100;
-      var mgCls=mg>=margemMin?'ok':mg>=0?'warn':'danger';
+      var mgCls2=mg>=margemMin?'ok':mg>=0?'warn':'danger';
       var stCls=s.status||'rascunho';
       html+='<div class="cot-card">'
         +'<div class="cot-head" data-cid="'+s.id+'">'
         +'<div class="cot-head-row">'
         +'<span class="cot-vendedor">'+(s.vendedor||'Vendedor')+'</span>'
         +'<span class="cot-cliente">'+s.cliente+'</span>'
-        +'<span class="cot-status '+stCls+'">'+stCls.charAt(0).toUpperCase()+stCls.slice(1)+'</span>'
-        +'<span class="cot-margem-badge '+mgCls+'">'+mg.toFixed(1)+'%</span>'
+        +'<span class="cot-margem-badge '+mgCls2+'">'+mg.toFixed(1)+'%</span>'
         +'<span class="cot-expand-icon">&#9660;</span>'
         +'</div>'
         +'<div class="cot-meta">'
         +'<span class="cot-meta-item"><strong>'+s.mes+'</strong></span>'
         +'<span class="cot-meta-item">Lista: <strong>R$ '+fmtBRL(s.totLista||0)+'</strong></span>'
         +'<span class="cot-meta-item">Neg: <strong>R$ '+fmtBRL(s.totNeg||0)+'</strong></span>'
-        +'</div></div>'
+        // Status buttons
+        +'<span style="margin-left:auto;display:flex;gap:4px">'
+        +['rascunho','enviada','aprovada','perdida'].map(function(st){
+          return '<button class="status-btn '+st+(stCls===st?' ':" opacity:0.4; ")+'" data-cid2="'+s.id+'" data-st="'+st+'" style="'+(stCls===st?'opacity:1':'opacity:0.35')+'">'+st.charAt(0).toUpperCase()+st.slice(1)+'</button>';
+        }).join('')
+        +'</span>'
+        +'</div>'
+        // Observacao
+        +(s.obs ? '<div style="padding:4px 0;font-size:12px;color:var(--text3);font-style:italic">&#128172; '+s.obs+'</div>' : '')
+        +'</div>'
         +'<div class="cot-body" id="body-'+s.id+'">'
         +'<div class="cot-item-row header"><span>Produto</span><span style="text-align:right">Qtde</span><span style="text-align:right">Preco Neg.</span><span style="text-align:right">Custo</span><span style="text-align:right">Margem</span></div>'
         +(s.items||[]).map(function(it){
           var custo=it.custo||0;
+          var custoAlterado=it.custoAlterado||false;
           var mg2=it.precoNeg>0?(it.precoNeg-custo)/it.precoNeg*100:0;
           var mc=mg2>=margemMin?'ok':mg2>=0?'warn':'danger';
+          var custoDisplay=custoAlterado
+            ? '<div><span class="custo-alterado">R$ '+fmtBRL(custo)+' &#9998;</span>'
+              +(it.custoObs?'<div class="custo-hist">'+it.custoObs+'</div>':'')
+              +(it.custoHistorico&&it.custoHistorico.length
+                ?'<div class="custo-hist">Anterior: R$ '+fmtBRL(it.custoHistorico[it.custoHistorico.length-1].valorAnterior)+' ('+it.custoHistorico[it.custoHistorico.length-1].data+')</div>'
+                :'')
+              +'</div>'
+            : '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'
+              +'<input class="custo-inp" type="number" value="'+custo.toFixed(2)+'" data-cid="'+s.id+'" data-pid="'+it.id+'" />'
+              +'<input class="obs-field" placeholder="Obs..." style="width:100px;font-size:10px;padding:2px 4px" data-obs-cid="'+s.id+'" data-obs-pid="'+it.id+'" />'
+              +'<button class="btn-custo-save" data-save-cid="'+s.id+'" data-save-pid="'+it.id+'">Salvar</button>'
+              +'</div>';
           return '<div class="cot-item-row">'
             +'<span class="cot-item-nome">'+it.nome+'</span>'
             +'<span class="cot-item-val">'+it.qty+'</span>'
             +'<span class="cot-item-val">R$ '+fmtBRL(it.precoNeg||0)+'</span>'
-            +'<span style="display:flex;align-items:center;gap:4px;justify-content:flex-end">'
-            +'<input class="custo-inp" type="number" value="'+custo.toFixed(2)+'" data-cid="'+s.id+'" data-pid="'+it.id+'" />'
-            +'</span>'
+            +'<span>'+custoDisplay+'</span>'
             +'<span class="cot-item-mg '+mc+'">'+mg2.toFixed(1)+'%</span>'
             +'</div>';
         }).join('')
@@ -1249,7 +1333,8 @@ async function loadGerente(){
 
     // Toggle expand
     listEl.querySelectorAll('.cot-head').forEach(function(h){
-      h.addEventListener('click', function(){
+      h.addEventListener('click', function(e){
+        if(e.target.classList.contains('status-btn')) return;
         var cid=h.getAttribute('data-cid');
         var body=document.getElementById('body-'+cid);
         var icon=h.querySelector('.cot-expand-icon');
@@ -1258,33 +1343,57 @@ async function loadGerente(){
       });
     });
 
-    // Custo inline edit
-    listEl.querySelectorAll('.custo-inp').forEach(function(inp){
-      inp.addEventListener('change', async function(){
-        var cid=inp.getAttribute('data-cid');
-        var pid=inp.getAttribute('data-pid');
-        var newCusto=parseFloat(inp.value)||0;
+    // Status change buttons
+    listEl.querySelectorAll('.status-btn').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var cid=btn.getAttribute('data-cid2');
+        var newSt=btn.getAttribute('data-st');
+        try {
+          await updateDoc(doc(db,'cotacoes',cid),{status:newSt, updatedAt:serverTimestamp()});
+          toast('Status atualizado!');
+          loadGerente();
+        } catch(e2){ toast('Erro: '+e2.message); }
+      });
+    });
+
+    // Custo save with obs and history
+    listEl.querySelectorAll('.btn-custo-save').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var cid=btn.getAttribute('data-save-cid');
+        var pid=btn.getAttribute('data-save-pid');
+        var inpEl=listEl.querySelector('.custo-inp[data-cid="'+cid+'"][data-pid="'+pid+'"]');
+        var obsEl=listEl.querySelector('[data-obs-cid="'+cid+'"][data-obs-pid="'+pid+'"]');
+        var newCusto=parseFloat(inpEl.value)||0;
+        var obsText=obsEl?obsEl.value.trim():'';
+        if(!obsText){ toast('Adicione uma observacao antes de salvar'); obsEl&&obsEl.focus(); return; }
         try {
           var snap2=await getDoc(doc(db,'cotacoes',cid));
           if(!snap2.exists()) return;
           var data2=snap2.data();
+          var agora=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'})+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
           var items2=(data2.items||[]).map(function(it){
-            if(it.id===pid) return {...it, custo:newCusto, totCusto:it.qty*newCusto};
+            if(it.id===pid){
+              var hist=(it.custoHistorico||[]);
+              hist.push({valorAnterior:it.custo||0, data:agora, gerente:currentUserData&&currentUserData.nome||currentUser.email, obs:obsText});
+              return {...it, custo:newCusto, totCusto:it.qty*newCusto, custoAlterado:true, custoObs:obsText, custoHistorico:hist};
+            }
             return it;
           });
-          var totCusto2=items2.reduce(function(a,it){ return a+it.totCusto; },0);
+          var totCusto2=items2.reduce(function(a,it){ return a+(it.totCusto||0); },0);
           var margem2=data2.totNeg>0?(data2.totNeg-totCusto2)/data2.totNeg:0;
           await updateDoc(doc(db,'cotacoes',cid),{items:items2,totCusto:totCusto2,margem:margem2,updatedAt:serverTimestamp()});
-          toast('Custo atualizado');
+          toast('Custo atualizado!');
           loadGerente();
-        } catch(e){ toast('Erro ao atualizar custo'); }
+        } catch(e2){ toast('Erro: '+e2.message); }
       });
     });
+
   } catch(e){ listEl.innerHTML='<div class="ger-empty">Erro: '+e.message+'</div>'; }
 }
-
 document.getElementById('ger-filter-vendedor').addEventListener('change', loadGerente);
 document.getElementById('ger-filter-status').addEventListener('change', loadGerente);
+document.getElementById('ger-filter-mes').addEventListener('change', loadGerente);
 
 // ===================== DIRECTOR MODULE =====================
 var taxaJuros = 1.5;    // % a.m.
