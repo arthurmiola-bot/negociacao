@@ -151,7 +151,8 @@
     /* ── GERENTE MODULE ── */
     #mod-gerente{flex:1;display:flex;flex-direction:column;overflow:hidden}
     #mod-diretor{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-    .dir-scroll{flex:1;overflow-y:auto;padding:10px 12px 20px;-webkit-overflow-scrolling:touch;min-height:0;height:100%}
+    #mod-diretor.hidden,#mod-gerente.hidden,#mod-vendedor.hidden{flex:0!important;overflow:hidden!important;height:0!important}
+    .dir-scroll{flex:1;overflow-y:auto;padding:10px 12px 20px;-webkit-overflow-scrolling:touch;min-height:0}
     .ger-scroll{flex:1;overflow-y:auto;padding:10px 12px;padding-bottom:calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
     .ger-header{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .ger-filter{flex:1;min-width:120px;border:1.5px solid var(--bdr);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;outline:none}
@@ -304,9 +305,9 @@
     <button class="mod-tab" data-mod="diretor" id="tab-diretor">&#9881; Diretor</button>
   </div>
 
-  <div id="modules-wrapper" style="flex:1;overflow:hidden;position:relative;height:100%">
+  <div id="modules-wrapper" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0">
   <!-- VENDEDOR -->
-  <div id="mod-vendedor" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-vendedor" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="mes-bar">
       <label>MES</label>
       <select class="mes-select" id="mes-select"></select>
@@ -372,7 +373,7 @@
   </div>
 
   <!-- GERENTE -->
-  <div id="mod-gerente" class="hidden" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-gerente" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="ger-scroll">
       <div class="ger-config">
         <span class="lbl">Configuracao</span>
@@ -404,7 +405,7 @@
 </div>
 
 <!-- DIRETOR MODULE -->
-  <div id="mod-diretor" class="hidden" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden">
+  <div id="mod-diretor" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="dir-scroll">
 
       <div class="ger-config">
@@ -1214,8 +1215,8 @@ document.querySelectorAll('.mod-tab').forEach(function(tab){
     tab.classList.add('active');
     ['vendedor','gerente','diretor'].forEach(function(m){
       var el=document.getElementById('mod-'+m);
-      if(mod===m){ el.classList.remove('hidden'); el.style.display='flex'; }
-      else { el.classList.add('hidden'); el.style.display='none'; }
+      if(mod===m){ el.classList.remove('hidden'); }
+      else { el.classList.add('hidden'); }
     });
     if(mod==='gerente') loadGerente();
     if(mod==='diretor') loadDiretor();
