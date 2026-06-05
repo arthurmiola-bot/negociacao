@@ -150,7 +150,9 @@
 
     /* ── GERENTE MODULE ── */
     #mod-gerente{flex:1;display:flex;flex-direction:column;overflow:hidden}
-    #mod-vendedor,#mod-gerente,#mod-diretor{flex-direction:column;overflow:hidden;min-height:0}
+    #mod-diretor{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+    #mod-vendedor:not(.hidden),#mod-gerente:not(.hidden),#mod-diretor:not(.hidden){flex:1;display:flex!important}
+    #mod-diretor.hidden,#mod-gerente.hidden,#mod-vendedor.hidden{display:none!important}
     .dir-scroll{flex:1;overflow-y:auto;padding:10px 12px 20px;-webkit-overflow-scrolling:touch;min-height:0}
     .ger-scroll{flex:1;overflow-y:auto;padding:10px 12px;padding-bottom:calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
     .ger-header{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
@@ -304,6 +306,7 @@
     <button class="mod-tab" data-mod="diretor" id="tab-diretor">&#9881; Diretor</button>
   </div>
 
+  <div id="modules-wrapper" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0">
   <!-- VENDEDOR -->
   <div id="mod-vendedor" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="mes-bar">
@@ -371,7 +374,7 @@
   </div>
 
   <!-- GERENTE -->
-  <div id="mod-gerente" style="display:none;flex:0;flex-direction:column;overflow:hidden;min-height:0">
+  <div id="mod-gerente" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="ger-scroll">
       <div class="ger-config">
         <span class="lbl">Configuracao</span>
@@ -403,7 +406,7 @@
 </div>
 
 <!-- DIRETOR MODULE -->
-  <div id="mod-diretor" style="display:none;flex:0;flex-direction:column;overflow:hidden;min-height:0">
+  <div id="mod-diretor" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
     <div class="dir-scroll">
 
       <div class="ger-config">
@@ -473,7 +476,7 @@
     </div>
   </div>
 
-  
+  </div><!-- /modules-wrapper -->
 
   <!-- DRAWER HISTORICO -->
 <div id="hist-overlay" class="overlay hidden"></div>
@@ -1213,13 +1216,8 @@ document.querySelectorAll('.mod-tab').forEach(function(tab){
     tab.classList.add('active');
     ['vendedor','gerente','diretor'].forEach(function(m){
       var el=document.getElementById('mod-'+m);
-      if(mod===m){
-        el.style.display='flex';
-        el.style.flex='1';
-      } else {
-        el.style.display='none';
-        el.style.flex='0';
-      }
+      if(mod===m){ el.classList.remove('hidden'); }
+      else { el.classList.add('hidden'); }
     });
     if(mod==='gerente') loadGerente();
     if(mod==='diretor') loadDiretor();
