@@ -758,7 +758,7 @@ function fmtBRL(n){ return (n||0).toLocaleString('pt-BR',{minimumFractionDigits:
 function fmtPct(n){ return (n*100).toFixed(1)+'%'; }
 function getVenda(p){ return p.v[mesIdx]||0; }
 function getCusto(p){
-  var bc = baseCustos.find(function(b){ return b.id===p.id; });
+  var bc = baseCustos.find(function(b){ return b.id===p.id || b.produto.toLowerCase().trim()===p.name.toLowerCase().trim(); });
   if(bc){
     var mesVenda = DATAS[mesIdx];
     return correctCusto(bc.custo, bc.mesRef, mesVenda);
@@ -1571,7 +1571,8 @@ document.getElementById('excel-upload').addEventListener('change', function(e){
         var grupo   = String(row[0]||'').trim();
         var produto = String(row[1]||'').trim();
         var custo   = parseFloat(String(row[2]||'').replace(',','.'));
-        var mes     = String(row[3]||'').trim();
+        var mesRaw  = String(row[3]||'').trim();
+        var mes     = mesRaw.charAt(0).toUpperCase() + mesRaw.slice(1).toLowerCase();
         if(!grupo || !produto || isNaN(custo) || !mes){ erros++; continue; }
         // Build ID matching PRODUTOS array
         var prod = PRODUTOS.find(function(p){ return p.name.toLowerCase()===produto.toLowerCase(); });
@@ -1595,13 +1596,20 @@ document.getElementById('btn-excel-send').addEventListener('click', async functi
   try {
     var btn = document.getElementById('btn-excel-send');
     btn.textContent = 'Enviando...';
-    // Use batch-like sequential writes
-    for(var i=0; i<excelData.length; i++){
-      var item = excelData[i];
-      await setDoc(doc(db,'custos',item.id), {
-        grupo:item.grupo, produto:item.produto,
-        custo:item.custo, mesRef:item.mesRef
-      });
+    var preview = document.getElementById('excel-preview');
+    // Send in batches of 20 with progress
+    var batchSize = 20;
+    for(var i=0; i<excelData.length; i+=batchSize){
+      var batch = excelData.slice(i, i+batchSize);
+      await Promise.all(batch.map(function(item){
+        return setDoc(doc(db,'custos',item.id), {
+          grupo:item.grupo, produto:item.produto,
+          custo:item.custo, mesRef:item.mesRef
+        });
+      }));
+      var pct = Math.min(100, Math.round((i+batchSize)/excelData.length*100));
+      btn.textContent = 'Enviando... '+pct+'%';
+      if(preview) preview.innerHTML = '<strong style="color:var(--az-btn)">'+Math.min(i+batchSize,excelData.length)+' de '+excelData.length+' produtos enviados</strong>';
     }
     toast(excelData.length+' custos salvos no Firebase!');
     btn.style.display = 'none';
