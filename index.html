@@ -756,7 +756,15 @@ var editingCotId = null;
 // ===================== UTILS =====================
 function fmtBRL(n){ return (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(n){ return (n*100).toFixed(1)+'%'; }
-function getVenda(p){ return p.v[mesIdx]||0; }
+function getVenda(p){
+  var bc = baseCustos.find(function(b){ return b.id===p.id || b.produto.toLowerCase().trim()===p.name.toLowerCase().trim(); });
+  if(bc){
+    var custoCorr = correctCusto(bc.custo, bc.mesRef, DATAS[mesIdx]);
+    var mg = getMargemGrupo(p.grupo);
+    return custoCorr / (1 - mg/100);
+  }
+  return p.v[mesIdx]||0;
+}
 function getCusto(p){
   var bc = baseCustos.find(function(b){ return b.id===p.id || b.produto.toLowerCase().trim()===p.name.toLowerCase().trim(); });
   if(bc){
